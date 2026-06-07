@@ -738,6 +738,23 @@ function bootAuth() {
 
 bootAuth();
 
+// ── Wake Lock ─────────────────────────────────────────────────
+let wakeLock = null;
+
+async function requestWakeLock() {
+  if (!('wakeLock' in navigator)) return;
+  try {
+    wakeLock = await navigator.wakeLock.request('screen');
+  } catch(e) {}
+}
+
+// Re-acquire if tab becomes visible again (required by the API)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') requestWakeLock();
+});
+
+requestWakeLock();
+
 </script>
 </body>
 </html>
