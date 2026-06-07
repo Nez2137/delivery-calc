@@ -1,21 +1,23 @@
-const CACHE = 'bk-wage-calc-v1';
+const CACHE = 'bk-wage-v2';
 const ASSETS = [
   './',
   './index.html',
   './manifest.json',
-  './icon.png',
-  'https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=DM+Mono:wght@400;500&display=swap'
+  './icon-192.png',
+  './icon-512.png'
 ];
 
-// Install — cache all assets
 self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(CACHE).then(cache => cache.addAll(ASSETS)).catch(() => {})
+    caches.open(CACHE)
+      .then(cache => {
+        // Add what we can, ignore missing icons
+        return Promise.allSettled(ASSETS.map(a => cache.add(a)));
+      })
   );
   self.skipWaiting();
 });
 
-// Activate — remove old caches
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys =>
@@ -25,9 +27,13 @@ self.addEventListener('activate', e => {
   self.clients.claim();
 });
 
-// Fetch — serve from cache, fall back to network
 self.addEventListener('fetch', e => {
+  // Only handle same-origin requests
+  if (!e.request.url.startsWith(self.location.origin)) return;
   e.respondWith(
-    caches.match(e.request).then(cached => cached || fetch(e.request).catch(() => caches.match('./index.html')))
+    caches.match(e.request)
+      .then(cached => cached || fetch(e.request)
+        .catch(() => caches.match('./index.html'))
+      )
   );
 });
