@@ -24,13 +24,20 @@
 
   /* ── Header ── */
   .header {
-    background: linear-gradient(135deg, #ff6b35 0%, #d94f1a 100%);
+    background: linear-gradient(160deg, #8b0000 0%, #6b0000 60%, #4a0000 100%);
     padding: 16px 16px 14px; margin-bottom: 14px; position: relative; overflow: hidden;
     display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 2px solid #cc0000;
   }
-  .header::after { content: ''; position: absolute; right: -20px; top: -20px; width: 120px; height: 120px; border-radius: 50%; background: rgba(255,255,255,0.06); pointer-events: none; }
-  .header-sub { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 3px; color: #ffd4c2; text-transform: uppercase; margin-bottom: 2px; }
-  .header-title { font-family: 'Barlow Condensed', sans-serif; font-size: 28px; font-weight: 700; color: #fff; letter-spacing: 1px; }
+  .header::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 30% 50%, rgba(180,0,0,0.4) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .header::after { content: ''; position: absolute; right: -20px; top: -20px; width: 140px; height: 140px; border-radius: 50%; background: rgba(255,255,255,0.03); pointer-events: none; }
+  .header-brand { font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 700; color: #f5c518; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 1px; text-shadow: 0 1px 6px rgba(0,0,0,0.6); }
+  .header-sub { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 3px; color: rgba(255,255,255,0.6); text-transform: uppercase; margin-bottom: 2px; }
+  .header-title { font-family: 'Barlow Condensed', sans-serif; font-size: 26px; font-weight: 700; color: #fff; letter-spacing: 1px; }
   .header-hist-btn {
     background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.2);
     color: #fff; border-radius: 8px; padding: 7px 11px;
@@ -290,8 +297,11 @@
 <!-- ═══════════════════════════════ MAIN ═══════════════════════════════ -->
 <div id="mainView">
   <div class="header">
-    <div class="header-sub">Delivery Driver</div>
-    <div class="header-title">Wage Calculator</div>
+    <div>
+      <div class="header-brand">Bankhead Chinese</div>
+      <div class="header-sub">Delivery Driver</div>
+      <div class="header-title">Wage Calculator</div>
+    </div>
     <div class="header-btns">
       <button class="header-hist-btn" onclick="openHistory()">📋 History</button>
       <button class="header-hist-btn" onclick="openFinalOrder()" style="background:rgba(124,58,237,0.5);border-color:rgba(167,139,250,0.4)">🏁 Final Order</button>
