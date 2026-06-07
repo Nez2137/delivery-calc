@@ -174,9 +174,58 @@
   .shift-total-row { display: flex; justify-content: space-between; padding: 8px 0 2px; }
   .shift-total-label { font-family: 'Barlow Condensed', sans-serif; font-size: 15px; color: var(--orange); text-transform: uppercase; letter-spacing: 1px; }
   .shift-total-val { font-size: 17px; color: var(--orange); }
+
+  /* ── Lock screen ── */
+  .lock-screen {
+    position: fixed; inset: 0; background: var(--bg); z-index: 999;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 32px;
+  }
+  .lock-icon { font-size: 48px; margin-bottom: 16px; }
+  .lock-title { font-family: 'Barlow Condensed', sans-serif; font-size: 26px; font-weight: 700; color: #fff; letter-spacing: 1px; margin-bottom: 4px; }
+  .lock-sub { font-size: 12px; color: var(--muted); margin-bottom: 32px; letter-spacing: 1px; }
+  .lock-input {
+    width: 100%; max-width: 300px; background: #0e0e0e; border: 1px solid #333;
+    border-radius: 10px; padding: 14px 16px; color: #fff;
+    font-family: 'DM Mono', monospace; font-size: 20px; outline: none;
+    text-align: center; letter-spacing: 4px; margin-bottom: 14px;
+    transition: border-color 0.2s;
+  }
+  .lock-input:focus { border-color: var(--orange); }
+  .lock-input.shake {
+    animation: shake 0.35s ease;
+    border-color: #ff4444;
+  }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    20% { transform: translateX(-8px); }
+    40% { transform: translateX(8px); }
+    60% { transform: translateX(-6px); }
+    80% { transform: translateX(6px); }
+  }
+  .lock-btn {
+    width: 100%; max-width: 300px; padding: 14px; border-radius: 10px;
+    border: none; background: var(--orange); color: #fff;
+    font-family: 'Barlow Condensed', sans-serif; font-size: 17px; letter-spacing: 2px;
+    text-transform: uppercase; cursor: pointer; transition: opacity 0.15s;
+  }
+  .lock-btn:active { opacity: 0.8; }
+  .lock-error { color: #ff4444; font-size: 12px; margin-top: 10px; min-height: 16px; }
 </style>
 </head>
 <body>
+
+
+<!-- ── Lock screen ── -->
+<div class="lock-screen" id="lockScreen">
+  <div class="lock-icon">🔐</div>
+  <div class="lock-title">Driver Wage Calc</div>
+  <div class="lock-sub">ENTER PASSWORD TO CONTINUE</div>
+  <input class="lock-input" type="password" id="lockInput" placeholder="••••••••"
+    onkeydown="if(event.key==='Enter') checkPassword()">
+  <button class="lock-btn" onclick="checkPassword()">Unlock</button>
+  <div class="lock-error" id="lockError"></div>
+</div>
 
 <div class="saved-dot" id="savedDot">● SAVED</div>
 <div class="copy-toast" id="copyToast"></div>
@@ -329,7 +378,7 @@
         <div class="section-right"><span class="section-total" id="wage-total">£0.00</span><span class="chevron">▼</span></div>
       </button>
       <div class="section-body">
-        <div class="input-label">Enter shift wage</div>
+        <div class="input-label">Enter shift wage (e.g. 3 hrs × £30 = 90)</div>
         <div class="input-wrap">
           <span class="input-prefix">£</span>
           <input class="num-input" type="number" inputmode="decimal" id="wage" placeholder="0.00" oninput="recalc()">
@@ -650,7 +699,45 @@ function applyState() {
 }
 
 function init() { load(); applyState(); }
-init();
+
+// ── Auth ─────────────────────────────────────────────────────
+const PSW_HASH  = '8d199a7ac09c146ee7ed2f08ceccbb22b12d8df63742a5fb368748743bf1d6e1';
+const AUTH_KEY  = 'drivercalc2_auth';
+
+async function hashInput(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+async function checkPassword() {
+  const val = document.getElementById('lockInput').value;
+  const h   = await hashInput(val);
+  if (h === PSW_HASH) {
+    localStorage.setItem(AUTH_KEY, '1');
+    document.getElementById('lockScreen').style.display = 'none';
+    init();
+  } else {
+    const inp = document.getElementById('lockInput');
+    const err = document.getElementById('lockError');
+    inp.classList.add('shake');
+    err.textContent = 'Incorrect password';
+    inp.value = '';
+    setTimeout(() => { inp.classList.remove('shake'); err.textContent = ''; }, 1200);
+  }
+}
+
+function bootAuth() {
+  if (localStorage.getItem(AUTH_KEY) === '1') {
+    document.getElementById('lockScreen').style.display = 'none';
+    init();
+  } else {
+    // show lock, don't call init yet
+    setTimeout(() => document.getElementById('lockInput').focus(), 100);
+  }
+}
+
+bootAuth();
+
 </script>
 </body>
 </html>
