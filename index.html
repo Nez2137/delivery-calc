@@ -819,6 +819,14 @@ function recalc() {
   document.getElementById('sum-wage').textContent       = fmt(wage);
   document.getElementById('sum-total').textContent      = fmt(grand);
 
+  // Cash to return to boss: cash held minus total earnings
+  const cashBack    = cashHeld - grand;
+  const cashBackRow = document.getElementById('cash-back-row');
+  if (cashBackRow) {
+    cashBackRow.style.display = cashHeld > 0 ? 'flex' : 'none';
+    document.getElementById('sum-cash-back').textContent = fmt(Math.max(0, cashBack));
+  }
+
   save();
   return { notesTotal, coinsTotal, cashHeld, ordersTotal, deliveryTotal, wage, tips, grand };
 }
