@@ -1,10 +1,7 @@
-const CACHE = 'bk-wage-v3';
+const CACHE = 'bk-wage-v4';
 const ASSETS = [
-  './',
   './index.html',
-  './manifest.json',
-  './icon-192.png',
-  './icon-512.png'
+  './manifest.json'
 ];
 
 self.addEventListener('install', e => {
