@@ -812,8 +812,9 @@ function recalc() {
   document.getElementById('orders-total').textContent   = fmt(ordersTotal);
   document.getElementById('delivery-total').textContent = fmt(deliveryTotal);
   document.getElementById('wage-total').textContent     = fmt(wage);
-  document.getElementById('tips-val').textContent       = fmt(tips);
-  document.getElementById('tips-banner').classList.toggle('positive', tips > 0);
+  const tipsReady = cashHeld > 0 && ordersTotal > 0;
+  document.getElementById('tips-val').textContent = tipsReady ? fmt(tips) : '—';
+  document.getElementById('tips-banner').classList.toggle('positive', tipsReady && tips > 0);
   document.getElementById('sum-tips').textContent       = fmt(tips);
   document.getElementById('sum-delivery').textContent   = fmt(deliveryTotal);
   document.getElementById('sum-wage').textContent       = fmt(wage);
@@ -1251,15 +1252,21 @@ function showCalcResult(text, valid) {
 
 function calcUse() {
   if (calcVal === null || calcVal <= 0 || !calcTarget) return;
-  // Feed into the inline add input and confirm
-  const input = document.getElementById(calcTarget + '-add-input');
-  if (!input) return;
-  input.value = calcVal.toFixed(2);
-  state[calcTarget].entries.push(calcVal);
-  renderEntries(calcTarget);
+  const baseInput = document.getElementById(calcTarget + '-base');
+  const baseVal   = parseFloat(baseInput ? baseInput.value : '') || 0;
+
+  if (baseVal === 0) {
+    // Base field is empty — populate it directly
+    baseInput.value = calcVal.toFixed(2);
+    state[calcTarget].base = baseInput.value;
+  } else {
+    // Base already has a value — stack as new entry
+    state[calcTarget].entries.push(calcVal);
+    renderEntries(calcTarget);
+  }
   recalc();
   closeCalc();
-  showToast('✓ £' + calcVal.toFixed(2) + ' added');
+  showToast('✓ £' + calcVal.toFixed(2) + (baseVal === 0 ? ' entered' : ' added'));
 }
 
 // ── Auth ─────────────────────────────────────────────────────
