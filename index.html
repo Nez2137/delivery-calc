@@ -353,6 +353,96 @@
   }
   .lock-btn:active { opacity: 0.8; }
   .lock-error { color: #ff4444; font-size: 12px; margin-top: 10px; min-height: 16px; }
+
+  /* ── Scan panel ── */
+  .scan-panel {
+    position: fixed; inset: 0; background: var(--bg); z-index: 100;
+    transform: translateX(100%); transition: transform 0.25s ease;
+    overflow-y: auto; padding-bottom: 40px;
+  }
+  .scan-panel.open { transform: translateX(0); }
+  .scan-header {
+    background: linear-gradient(135deg, #1a5a7a 0%, #0d3a52 100%);
+    padding: 16px; display: flex; align-items: center; gap: 12px;
+    position: sticky; top: 0; z-index: 10; border-bottom: 1px solid #2a6a8a;
+  }
+  .scan-back { background: none; border: none; color: rgba(255,255,255,0.85); font-size: 24px; cursor: pointer; padding: 2px 6px; }
+  .scan-htext { flex: 1; }
+  .scan-hsub { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 3px; color: rgba(255,255,255,0.6); text-transform: uppercase; }
+  .scan-htitle { font-family: 'Barlow Condensed', sans-serif; font-size: 24px; font-weight: 700; color: #fff; letter-spacing: 1px; }
+  .scan-wrap { padding: 14px 12px; }
+
+  .scan-cam-btn {
+    width: 100%; background: rgba(96,192,240,0.12); border: 1px solid #60c0f0; color: #60c0f0;
+    border-radius: 12px; padding: 16px; font-family: 'Barlow Condensed', sans-serif;
+    font-size: 17px; letter-spacing: 1px; text-transform: uppercase; cursor: pointer;
+  }
+  .scan-cam-btn:active { background: rgba(96,192,240,0.25); }
+  .scan-cam-btn:disabled { opacity: 0.4; border-color: #333; color: #555; }
+
+  .scan-offline {
+    display: none; margin-top: 12px; padding: 12px 14px; border-radius: 10px;
+    background: rgba(255,107,53,0.1); border: 1px solid var(--orange); color: var(--orange);
+    font-size: 12px; line-height: 1.6; text-align: center;
+  }
+  .scan-offline.show { display: block; }
+
+  .scan-queue-head { display: flex; justify-content: space-between; align-items: center; margin: 20px 0 10px; }
+  .scan-queue-head h2 { font-family: 'Barlow Condensed', sans-serif; font-size: 14px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+  .scan-queue-count { font-size: 13px; color: #60c0f0; }
+  .scan-empty { text-align: center; color: var(--faint); font-size: 13px; padding: 24px 0; line-height: 1.8; }
+  .scan-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; }
+  .scan-thumb { position: relative; aspect-ratio: 3/4; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); background: #000; }
+  .scan-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .scan-thumb-num { position: absolute; top: 4px; left: 4px; background: rgba(0,0,0,0.7); color: #fff; font-size: 11px; padding: 2px 6px; border-radius: 6px; }
+  .scan-thumb-del { position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.7); color: #ff4444; border: none; width: 22px; height: 22px; border-radius: 6px; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; }
+  .scan-thumb-status { position: absolute; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; }
+  .scan-thumb.reading .scan-thumb-status, .scan-thumb.done .scan-thumb-status { display: flex; }
+  .scan-thumb-spin { width: 20px; height: 20px; border: 3px solid rgba(96,192,240,0.3); border-top-color: #60c0f0; border-radius: 50%; animation: scanspin 0.8s linear infinite; }
+  @keyframes scanspin { to { transform: rotate(360deg); } }
+  .scan-thumb-tick { font-size: 22px; color: var(--green); }
+  .scan-thumb-fail { font-size: 22px; color: var(--orange); }
+
+  .scan-read-btn {
+    width: 100%; margin-top: 14px; background: var(--green); border: 1px solid var(--green); color: #fff;
+    border-radius: 12px; padding: 15px; font-family: 'Barlow Condensed', sans-serif;
+    font-size: 17px; letter-spacing: 1px; text-transform: uppercase; cursor: pointer;
+  }
+  .scan-read-btn:active { opacity: 0.85; }
+  .scan-read-btn:disabled { opacity: 0.4; }
+
+  .scan-progress { margin-top: 14px; display: none; }
+  .scan-progress.show { display: block; }
+  .scan-progress-label { font-size: 13px; color: #60c0f0; margin-bottom: 8px; }
+  .scan-progress-track { height: 8px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+  .scan-progress-fill { height: 100%; background: #60c0f0; width: 0%; transition: width 0.3s; }
+
+  .scan-review { margin-top: 22px; display: none; }
+  .scan-review.show { display: block; }
+  .scan-review-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
+  .scan-review-head h2 { font-family: 'Barlow Condensed', sans-serif; font-size: 18px; color: #fff; letter-spacing: 1px; }
+  .scan-review-sum { font-size: 12px; color: var(--muted); }
+  .scan-rev-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin-bottom: 10px; }
+  .scan-rev-card.fail { border-color: rgba(255,107,53,0.5); }
+  .scan-rev-top { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .scan-rev-thumb { width: 38px; height: 50px; border-radius: 8px; object-fit: cover; border: 1px solid var(--border); flex-shrink: 0; }
+  .scan-rev-title { font-size: 13px; color: var(--muted); flex: 1; }
+  .scan-rev-raw-btn { background: none; border: 1px solid var(--border); color: var(--muted); font-size: 11px; padding: 4px 9px; border-radius: 7px; cursor: pointer; }
+  .scan-rev-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-top: 1px solid var(--border); }
+  .scan-rev-label { font-size: 13px; color: var(--muted); }
+  .scan-rev-field { display: flex; align-items: center; gap: 4px; }
+  .scan-rev-input { background: #0e0e0e; border: 1px solid #333; border-radius: 8px; padding: 7px 9px; color: #fff; font-family: 'DM Mono', monospace; font-size: 16px; width: 90px; text-align: right; -moz-appearance: textfield; appearance: textfield; }
+  .scan-rev-input::-webkit-outer-spin-button, .scan-rev-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .scan-rev-input.missing { border-color: var(--orange); }
+  .scan-rev-raw { display: none; margin-top: 10px; background: #0a0a0a; border: 1px solid var(--border); border-radius: 8px; padding: 10px; font-family: 'DM Mono', monospace; font-size: 12px; color: #a8e6b0; white-space: pre-wrap; word-break: break-word; line-height: 1.6; max-height: 180px; overflow-y: auto; }
+  .scan-rev-raw.show { display: block; }
+  .scan-add-btn {
+    width: 100%; margin-top: 6px; background: rgba(96,192,240,0.15); border: 1px solid #60c0f0; color: #60c0f0;
+    border-radius: 12px; padding: 15px; font-family: 'Barlow Condensed', sans-serif;
+    font-size: 17px; letter-spacing: 1px; text-transform: uppercase; cursor: pointer;
+  }
+  .scan-add-btn:active { background: rgba(96,192,240,0.3); }
+  .scan-note { margin-top: 14px; font-size: 11px; color: var(--faint); text-align: center; line-height: 1.8; }
 </style>
 </head>
 <body>
@@ -381,6 +471,7 @@
       <div class="header-title">Wage Calculator</div>
     </div>
     <div class="header-btns">
+      <button class="header-hist-btn" onclick="openScan()" style="background:rgba(96,192,240,0.4);border-color:rgba(96,192,240,0.5)">📷 Scan</button>
       <button class="header-hist-btn" onclick="openHistory()">📋 History</button>
       <button class="header-hist-btn" onclick="openFinalOrder()" style="background:rgba(124,58,237,0.5);border-color:rgba(167,139,250,0.4)">🏁 Final Order</button>
     </div>
@@ -685,6 +776,50 @@
   <div id="historyList"></div>
 </div>
 
+<!-- ═══════════════════════════════ SCAN PANEL ═══════════════════════════ -->
+<div class="scan-panel" id="scanPanel">
+  <div class="scan-header">
+    <button class="scan-back" onclick="closeScan()">←</button>
+    <div class="scan-htext">
+      <div class="scan-hsub">Ticket Scanner</div>
+      <div class="scan-htitle">Scan Tickets</div>
+    </div>
+  </div>
+  <div class="scan-wrap">
+    <button class="scan-cam-btn" id="scanCamBtn" onclick="document.getElementById('scanFile').click()">📸 Add Ticket Photo</button>
+    <input type="file" accept="image/*" capture="environment" id="scanFile" style="display:none" onchange="handleScanCapture(event)">
+    <div class="scan-offline" id="scanOffline">You're offline — scanning needs internet to load the reader.<br>Enter values manually with + Add, or reconnect and try again.</div>
+
+    <div class="scan-queue-head">
+      <h2>Photos to read</h2>
+      <span class="scan-queue-count" id="scanQueueCount">0</span>
+    </div>
+    <div class="scan-empty" id="scanEmpty">No photos yet.<br>Tap “Add Ticket Photo” and build up your stack.</div>
+    <div class="scan-grid" id="scanGrid"></div>
+
+    <button class="scan-read-btn" id="scanReadBtn" onclick="scanReadAll()" disabled>Read all tickets</button>
+
+    <div class="scan-progress" id="scanProgress">
+      <div class="scan-progress-label" id="scanProgressLabel">Reading 0 of 0…</div>
+      <div class="scan-progress-track"><div class="scan-progress-fill" id="scanProgressFill"></div></div>
+    </div>
+
+    <div class="scan-review" id="scanReview">
+      <div class="scan-review-head">
+        <h2>Results</h2>
+        <span class="scan-review-sum" id="scanReviewSum"></span>
+      </div>
+      <div id="scanReviewList"></div>
+      <button class="scan-add-btn" onclick="scanAddAll()">✓ Add all to calculator</button>
+      <div class="scan-note">
+        TOTAL adds to Cash Orders · Delivery Charge adds to Delivery.<br>
+        Green = read · Orange = check it. Tap “raw” to see what was read.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script>
 const MAX_HISTORY = 30;
 const STORE_KEY   = 'drivercalc2';
@@ -1142,6 +1277,217 @@ function recalcFinal() {
   recalc();
 }
 
+
+// ── Ticket Scanner (Tesseract) ───────────────────────────────
+let scanTickets = [];      // { id, thumbUrl, blob, status, order, deliv, raw }
+let scanNextId = 1;
+let scanWorker = null;
+const SCAN_MAX_WIDTH = 1500;
+
+function openScan() {
+  document.getElementById('scanPanel').classList.add('open');
+  const offline = !navigator.onLine;
+  document.getElementById('scanOffline').classList.toggle('show', offline);
+  document.getElementById('scanCamBtn').disabled = offline;
+}
+function closeScan() { document.getElementById('scanPanel').classList.remove('open'); }
+
+async function handleScanCapture(ev) {
+  const file = ev.target.files && ev.target.files[0];
+  ev.target.value = '';
+  if (!file) return;
+  const shrunk = await scanShrink(file);
+  const id = scanNextId++;
+  scanTickets.push({ id, blob: shrunk, thumbUrl: URL.createObjectURL(shrunk), status: 'pending', order: null, deliv: null, raw: '' });
+  scanRenderQueue();
+}
+
+function scanShrink(file) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      let { width, height } = img;
+      if (width > SCAN_MAX_WIDTH) { height = Math.round(height * (SCAN_MAX_WIDTH / width)); width = SCAN_MAX_WIDTH; }
+      const canvas = document.createElement('canvas');
+      canvas.width = width; canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      URL.revokeObjectURL(url);
+      canvas.toBlob(b => resolve(b || file), 'image/jpeg', 0.85);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+    img.src = url;
+  });
+}
+
+function scanRenderQueue() {
+  const grid = document.getElementById('scanGrid');
+  document.getElementById('scanQueueCount').textContent = scanTickets.length;
+  document.getElementById('scanReadBtn').disabled = scanTickets.length === 0;
+  document.getElementById('scanEmpty').style.display = scanTickets.length ? 'none' : 'block';
+  grid.innerHTML = '';
+  scanTickets.forEach((t, i) => {
+    const div = document.createElement('div');
+    div.className = 'scan-thumb' + (t.status === 'reading' ? ' reading' : '') + (t.status === 'done' || t.status === 'fail' ? ' done' : '');
+    let inner = '';
+    if (t.status === 'reading') inner = '<div class="scan-thumb-spin"></div>';
+    else if (t.status === 'done') inner = '<div class="scan-thumb-tick">✓</div>';
+    else if (t.status === 'fail') inner = '<div class="scan-thumb-fail">!</div>';
+    div.innerHTML = '<img src="' + t.thumbUrl + '"><span class="scan-thumb-num">' + (i+1) + '</span>' +
+      (t.status === 'pending' ? '<button class="scan-thumb-del" onclick="scanRemove(' + t.id + ')">✕</button>' : '') +
+      '<div class="scan-thumb-status">' + inner + '</div>';
+    grid.appendChild(div);
+  });
+}
+
+function scanRemove(id) {
+  const t = scanTickets.find(x => x.id === id);
+  if (t) URL.revokeObjectURL(t.thumbUrl);
+  scanTickets = scanTickets.filter(x => x.id !== id);
+  scanRenderQueue();
+}
+
+async function scanGetWorker() {
+  if (scanWorker) return scanWorker;
+  scanWorker = await Tesseract.createWorker('eng');
+  return scanWorker;
+}
+
+async function scanReadAll() {
+  if (!scanTickets.length) return;
+  if (!navigator.onLine && !scanWorker) {
+    document.getElementById('scanOffline').classList.add('show');
+    return;
+  }
+  document.getElementById('scanReadBtn').disabled = true;
+  document.getElementById('scanCamBtn').disabled = true;
+  document.getElementById('scanProgress').classList.add('show');
+  let w;
+  try { w = await scanGetWorker(); }
+  catch (e) {
+    document.getElementById('scanProgress').classList.remove('show');
+    document.getElementById('scanOffline').classList.add('show');
+    document.getElementById('scanCamBtn').disabled = false;
+    return;
+  }
+  const total = scanTickets.length;
+  for (let i = 0; i < total; i++) {
+    const t = scanTickets[i];
+    scanUpdateProgress(i, total);
+    t.status = 'reading'; scanRenderQueue();
+    try {
+      const { data } = await w.recognize(t.blob);
+      t.raw = data.text || '';
+      t.order = scanExtractTotal(t.raw);
+      t.deliv = scanExtractValue(t.raw, ['delivery','deliverv','deljvery','de1ivery','del charge','del ']);
+      t.status = (t.order != null || t.deliv != null) ? 'done' : 'fail';
+    } catch (e) { t.raw = 'ERROR: ' + e.message; t.status = 'fail'; }
+    scanRenderQueue();
+  }
+  scanUpdateProgress(total, total);
+  setTimeout(() => document.getElementById('scanProgress').classList.remove('show'), 400);
+  document.getElementById('scanCamBtn').disabled = false;
+  scanShowReview();
+}
+
+function scanUpdateProgress(done, total) {
+  const label = document.getElementById('scanProgressLabel');
+  label.textContent = done >= total ? ('Done — ' + total + ' tickets read') : ('Reading ' + Math.min(done+1, total) + ' of ' + total + '…');
+  document.getElementById('scanProgressFill').style.width = Math.round((done/total)*100) + '%';
+}
+
+// Parser — insists on 2-decimal money, repairs OCR fractures
+function scanParseMoney(line) {
+  let m = line.match(/\d{1,3}(?:[.,]\d{3})*[.,]\d{2}(?!\d)/g);
+  if (m && m.length) { let v = m[m.length-1].replace(/[.,](?=\d{3}\b)/g,'').replace(',','.'); const n = parseFloat(v); if (!isNaN(n)) return n; }
+  m = line.match(/(\d{1,4})\s*[.,]?\s+(\d{2})(?!\d)/);
+  if (m) { const n = parseFloat(m[1] + '.' + m[2]); if (!isNaN(n)) return n; }
+  m = line.match(/(?<![.,\d])(\d{3,6})(?![.,\d])/);
+  if (m) { const d = m[1]; const n = parseFloat(d.slice(0,-2) + '.' + d.slice(-2)); if (!isNaN(n)) return n; }
+  return null;
+}
+function scanIsTotalLine(lower) {
+  if (lower.includes('sub')) return false;
+  if (lower.includes('total')) return true;
+  if (/t[o0][ .]?[a-z]?al/.test(lower)) return true;
+  if (/to ?al/.test(lower)) return true;
+  return false;
+}
+function scanAllMoney(text) {
+  const out = [];
+  for (const line of text.split('\n')) {
+    const ms = line.match(/\d{1,3}(?:[.,]\d{3})*[.,]\d{2}(?!\d)/g);
+    if (ms) for (const x of ms) { const v = parseFloat(x.replace(/[.,](?=\d{3}\b)/g,'').replace(',','.')); if (!isNaN(v)) out.push(v); }
+  }
+  return out;
+}
+function scanExtractTotal(text) {
+  let c = null;
+  for (const line of text.split('\n')) { if (scanIsTotalLine(line.toLowerCase())) { const v = scanParseMoney(line); if (v != null) c = v; } }
+  if (c == null) { const all = scanAllMoney(text); if (all.length) c = Math.max(...all); }
+  return c;
+}
+function scanExtractValue(text, labels) {
+  for (const line of text.split('\n')) {
+    const lower = line.toLowerCase();
+    if (labels.some(l => lower.includes(l))) { const v = scanParseMoney(line); if (v != null) return v; }
+  }
+  return null;
+}
+
+function scanEscape(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function scanShowReview() {
+  const list = document.getElementById('scanReviewList');
+  list.innerHTML = '';
+  let readCount = 0;
+  scanTickets.forEach((t, i) => {
+    if (t.order != null || t.deliv != null) readCount++;
+    const oVal = t.order != null ? t.order.toFixed(2) : '';
+    const dVal = t.deliv != null ? t.deliv.toFixed(2) : '';
+    const card = document.createElement('div');
+    card.className = 'scan-rev-card' + (t.status === 'fail' ? ' fail' : '');
+    card.innerHTML =
+      '<div class="scan-rev-top"><img class="scan-rev-thumb" src="' + t.thumbUrl + '">' +
+        '<span class="scan-rev-title">Ticket ' + (i+1) + '</span>' +
+        '<button class="scan-rev-raw-btn" onclick="scanToggleRaw(' + t.id + ')">raw</button></div>' +
+      '<div class="scan-rev-row"><span class="scan-rev-label">🧾 TOTAL → Cash Orders</span>' +
+        '<div class="scan-rev-field">£ <input class="scan-rev-input' + (t.order==null?' missing':'') + '" type="number" inputmode="decimal" data-scan-order="' + t.id + '" value="' + oVal + '" placeholder="—"></div></div>' +
+      '<div class="scan-rev-row"><span class="scan-rev-label">🚗 Delivery Charge</span>' +
+        '<div class="scan-rev-field">£ <input class="scan-rev-input' + (t.deliv==null?' missing':'') + '" type="number" inputmode="decimal" data-scan-deliv="' + t.id + '" value="' + dVal + '" placeholder="—"></div></div>' +
+      '<div class="scan-rev-raw" id="scanRaw-' + t.id + '">' + scanEscape(t.raw.trim() || '(nothing read)') + '</div>';
+    list.appendChild(card);
+  });
+  document.getElementById('scanReviewSum').textContent = readCount + ' of ' + scanTickets.length + ' read';
+  document.getElementById('scanReview').classList.add('show');
+  document.getElementById('scanReview').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function scanToggleRaw(id) { document.getElementById('scanRaw-' + id).classList.toggle('show'); }
+
+// Push reviewed values into the calculator as entries (same path as + Add)
+function scanAddAll() {
+  let addedOrders = 0, addedDeliv = 0;
+  document.querySelectorAll('[data-scan-order]').forEach(inp => {
+    const v = parseFloat(inp.value);
+    if (v && v > 0) { state.orders.entries.push(v); addedOrders++; }
+  });
+  document.querySelectorAll('[data-scan-deliv]').forEach(inp => {
+    const v = parseFloat(inp.value);
+    if (v && v > 0) { state.delivery.entries.push(v); addedDeliv++; }
+  });
+  if (addedOrders === 0 && addedDeliv === 0) { showToast('Nothing to add'); return; }
+  renderEntries('orders');
+  renderEntries('delivery');
+  recalc();
+  // clear the queue for next batch
+  scanTickets.forEach(t => URL.revokeObjectURL(t.thumbUrl));
+  scanTickets = [];
+  scanRenderQueue();
+  document.getElementById('scanReview').classList.remove('show');
+  closeScan();
+  showToast('✓ Added ' + addedOrders + ' order' + (addedOrders!==1?'s':'') + ', ' + addedDeliv + ' delivery');
+}
 
 // ── Mini Calculator ──────────────────────────────────────────
 let calcTarget = null;   // which field key ('notes','coins' etc.)
