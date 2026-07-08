@@ -190,62 +190,6 @@
   .shift-total-val { font-size: 17px; color: var(--orange); }
 
 
-  /* ── Final Order panel ── */
-  .final-panel {
-    position: fixed; inset: 0; background: var(--bg); z-index: 100;
-    transform: translateX(100%); transition: transform 0.25s ease;
-    overflow-y: auto; padding-bottom: 48px;
-  }
-  .final-panel.open { transform: translateX(0); }
-
-  .final-header {
-    background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
-    padding: 20px 16px 18px; position: relative; overflow: hidden;
-    display: flex; align-items: flex-start; gap: 12px;
-  }
-  .final-header::after { content:''; position:absolute; right:-20px; top:-20px; width:120px; height:120px; border-radius:50%; background:rgba(255,255,255,0.05); }
-  .final-back { background:none; border:none; color:rgba(255,255,255,0.8); font-size:24px; cursor:pointer; padding:4px 4px 0 0; z-index:1; }
-  .final-header-text { z-index:1; }
-  .final-header-sub { font-family:'Barlow Condensed',sans-serif; font-size:11px; letter-spacing:3px; color:rgba(255,255,255,0.6); text-transform:uppercase; margin-bottom:2px; }
-  .final-header-title { font-family:'Barlow Condensed',sans-serif; font-size:28px; font-weight:700; color:#fff; letter-spacing:1px; }
-
-  .final-wrap { padding: 14px 12px; }
-
-  /* Verdict card */
-  .verdict-card {
-    border-radius: 14px; padding: 14px 16px; margin-bottom: 14px;
-    border: 1px solid var(--border); background: var(--surface);
-    transition: background 0.3s, border-color 0.3s;
-  }
-  .verdict-card.correct  { background: var(--green-dim); border-color: var(--green); }
-  .verdict-card.wrong    { background: rgba(255,68,68,0.08); border-color: #ff4444; }
-  .verdict-heading { font-family:'Barlow Condensed',sans-serif; font-size:12px; letter-spacing:3px; text-transform:uppercase; color:var(--faint); margin-bottom:10px; }
-  .verdict-row { display:flex; justify-content:space-between; align-items:center; padding:5px 0; border-top:1px solid #1e1e1e; }
-  .verdict-label { font-size:13px; color:var(--muted); }
-  .verdict-val   { font-size:14px; color:#ccc; }
-  .verdict-status {
-    display:flex; align-items:center; gap:8px; margin-top:10px;
-    padding:10px 12px; border-radius:10px; background:#0e0e0e;
-  }
-  .verdict-icon  { font-size:22px; }
-  .verdict-text  { font-family:'Barlow Condensed',sans-serif; font-size:16px; letter-spacing:1px; color:var(--faint); }
-  .verdict-card.correct .verdict-text { color:var(--green); }
-  .verdict-card.wrong   .verdict-text { color:#ff4444; }
-
-  /* Final summary */
-  .final-summary-card { background:var(--surface); border:1px solid rgba(124,58,237,0.4); border-radius:14px; padding:14px 16px; margin-bottom:14px; }
-  .final-summary-heading { font-family:'Barlow Condensed',sans-serif; color:#a78bfa; font-size:12px; letter-spacing:3px; text-transform:uppercase; margin-bottom:8px; }
-  .final-sum-row { display:flex; justify-content:space-between; align-items:center; padding:7px 0; border-top:1px solid var(--border); }
-  .final-sum-label { font-size:14px; color:var(--muted); }
-  .final-sum-val   { font-size:15px; color:#ccc; }
-  .final-sum-total-row { display:flex; justify-content:space-between; align-items:center; padding:12px 0 0; border-top:2px solid #7c3aed; margin-top:6px; }
-  .final-sum-total-label { font-family:'Barlow Condensed',sans-serif; font-size:20px; text-transform:uppercase; letter-spacing:1px; color:#a78bfa; }
-  .final-sum-total-val   { font-size:26px; font-weight:500; color:#a78bfa; }
-
-  .final-note { font-size:11px; color:var(--faint); text-align:center; margin-bottom:14px; line-height:1.8; }
-  .final-note span { color:#a78bfa; }
-
-
   /* ── Mini Calculator ── */
   .calc-sheet-overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,0.55);
@@ -473,7 +417,6 @@
     <div class="header-btns">
       <button class="header-hist-btn" onclick="openScan()" style="background:rgba(96,192,240,0.4);border-color:rgba(96,192,240,0.5)">📷 Scan</button>
       <button class="header-hist-btn" onclick="openHistory()">📋 History</button>
-      <button class="header-hist-btn" onclick="openFinalOrder()" style="background:rgba(124,58,237,0.5);border-color:rgba(167,139,250,0.4)">🏁 Final Order</button>
     </div>
   </div>
 
@@ -644,10 +587,6 @@
         <span class="summary-row-label" style="color:#fb923c">Wage</span>
         <span class="summary-row-val"   style="color:#fb923c" id="sum-wage">£0.00</span>
       </div>
-      <div class="summary-row" id="fo-summary-row" style="display:none">
-        <span class="summary-row-label" style="color:#a78bfa">+ Final Order</span>
-        <span class="summary-row-val"   style="color:#a78bfa" id="sum-final-order">£0.00</span>
-      </div>
       <div class="summary-total-row">
         <span class="summary-total-label">Total Earnings</span>
         <span class="summary-total-val" id="sum-total">£0.00</span>
@@ -669,102 +608,6 @@
   </div><!-- /wrap -->
 </div><!-- /mainView -->
 
-
-<!-- ═══════════════════════════ FINAL ORDER PANEL ══════════════════════════ -->
-<div class="final-panel" id="finalPanel">
-  <div class="final-header">
-    <button class="final-back" onclick="closeFinalOrder()">←</button>
-    <div class="final-header-text">
-      <div class="final-header-sub">End of Shift</div>
-      <div class="final-header-title">Final Order</div>
-    </div>
-  </div>
-
-  <div class="final-wrap">
-
-    <!-- Inputs -->
-    <div class="section open" style="--accent:#a78bfa">
-      <div class="section-header" style="cursor:default">
-        <span class="section-label">Order Details</span>
-      </div>
-      <div class="section-body" style="display:block">
-
-        <div class="input-label">Order value (deducted from your wage by boss)</div>
-        <div class="input-wrap" style="margin-bottom:14px">
-          <span class="input-prefix" style="color:#a78bfa">£</span>
-          <input class="num-input" type="number" inputmode="decimal" id="fo-order-value" placeholder="0.00" oninput="recalcFinal()" style="border-color:#333">
-        </div>
-
-        <div class="input-label">Cash received from customer</div>
-        <div class="input-wrap" style="margin-bottom:14px">
-          <span class="input-prefix" style="color:#4caf50">£</span>
-          <input class="num-input" type="number" inputmode="decimal" id="fo-cash-received" placeholder="0.00" oninput="recalcFinal()" style="border-color:#333">
-        </div>
-
-        <div class="input-label">Delivery charge for this order</div>
-        <div class="input-wrap">
-          <span class="input-prefix" style="color:#c084fc">£</span>
-          <input class="num-input" type="number" inputmode="decimal" id="fo-delivery" placeholder="0.00" oninput="recalcFinal()" style="border-color:#333">
-        </div>
-
-      </div>
-    </div>
-
-    <!-- Verdict: did boss deduct the right amount? -->
-    <div class="verdict-card" id="fo-verdict-card">
-      <div class="verdict-heading">Deduction Check</div>
-      <div class="verdict-row">
-        <span class="verdict-label">Your Total Earnings (main calc)</span>
-        <span class="verdict-val" id="fo-v-main-total">£0.00</span>
-      </div>
-      <div class="verdict-row">
-        <span class="verdict-label">Order value deducted</span>
-        <span class="verdict-val" id="fo-v-order">£0.00</span>
-      </div>
-      <div class="verdict-row">
-        <span class="verdict-label">You should receive from boss</span>
-        <span class="verdict-val" id="fo-v-expected" style="color:#fff;font-size:16px">£0.00</span>
-      </div>
-      <div class="verdict-status">
-        <span class="verdict-icon" id="fo-v-icon">—</span>
-        <span class="verdict-text" id="fo-v-text">Enter order value to check</span>
-      </div>
-    </div>
-
-    <!-- Final breakdown -->
-    <div class="final-summary-card">
-      <div class="final-summary-heading">What You Actually Receive</div>
-      <div class="final-sum-row">
-        <span class="final-sum-label" style="color:#fb923c">Wage from boss</span>
-        <span class="final-sum-val"   style="color:#fb923c" id="fo-wage-out">£0.00</span>
-      </div>
-      <div class="final-sum-row">
-        <span class="final-sum-label" style="color:#4caf50">Cash back from customer</span>
-        <span class="final-sum-val"   style="color:#4caf50" id="fo-cash-out">£0.00</span>
-      </div>
-      <div class="final-sum-row">
-        <span class="final-sum-label" style="color:#4caf50">↳ Tip extracted</span>
-        <span class="final-sum-val"   style="color:#4caf50" id="fo-tip">£0.00</span>
-      </div>
-      <div class="final-sum-row">
-        <span class="final-sum-label" style="color:#c084fc">Delivery charge</span>
-        <span class="final-sum-val"   style="color:#c084fc" id="fo-delivery-out">£0.00</span>
-      </div>
-      <div class="final-sum-total-row">
-        <span class="final-sum-total-label">Final Total</span>
-        <span class="final-sum-total-val" id="fo-total">£0.00</span>
-      </div>
-    </div>
-
-    <div class="final-note">
-      Final total includes main earnings + tip + delivery charge.<br>
-      Hit <span>💾 Save Shift</span> on the main screen to record.
-    </div>
-
-    <button class="reset-btn" onclick="resetFinalOrder()" style="margin-top:4px">Clear Final Order</button>
-
-  </div>
-</div>
 
 <!-- ═══════════════════════════════ HISTORY PANEL ═══════════════════════ -->
 <div class="history-panel" id="historyPanel">
@@ -832,8 +675,7 @@ let state = {
   orders:   { base: '', entries: [] },
   delivery: { base: '', entries: [] },
   wage: '',
-  sections: { 'sec-notes': true, 'sec-coins': true, 'sec-orders': true, 'sec-delivery': true, 'sec-wage': true },
-  finalOrder: { orderValue: '', cashReceived: '', delivery: '' }
+  sections: { 'sec-notes': true, 'sec-coins': true, 'sec-orders': true, 'sec-delivery': true, 'sec-wage': true }
 };
 
 // ── Persistence ──────────────────────────────────────────────
@@ -924,22 +766,7 @@ function recalc() {
   const deliveryTotal = fieldTotal('delivery');
   const wage          = parseFloat(state.wage) || 0;
   const tips          = Math.max(0, cashHeld - ordersTotal);
-  // Final order contribution — only tip + delivery charge add on top
-  // (wage is already in main calc; boss deducts order value, customer pays it back)
-  const fo = state.finalOrder;
-  const foOrderVal  = parseFloat(fo.orderValue)   || 0;
-  const foCash      = parseFloat(fo.cashReceived) || 0;
-  const foDelivery  = parseFloat(fo.delivery)     || 0;
-  const foTip       = Math.max(0, foCash - foOrderVal);
-  const foExtra     = foTip + foDelivery;   // what actually adds to your total
-  const hasFO       = foOrderVal > 0 || foCash > 0 || foDelivery > 0;
-  const grand       = tips + deliveryTotal + wage + (hasFO ? foExtra : 0);
-
-  // Final order summary row visibility
-  const foRow = document.getElementById('fo-summary-row');
-  if (foRow) { foRow.style.display = hasFO ? 'flex' : 'none'; }
-  const sumFO = document.getElementById('sum-final-order');
-  if (sumFO) sumFO.textContent = fmt(hasFO ? foExtra : 0);
+  const grand         = tips + deliveryTotal + wage;
 
   document.getElementById('notes-total').textContent    = fmt(notesTotal);
   document.getElementById('coins-total').textContent    = fmt(coinsTotal);
@@ -970,13 +797,6 @@ function recalc() {
 // ── Export / clipboard ───────────────────────────────────────
 function buildSnapshot() {
   const v = recalc();
-  const fo = state.finalOrder;
-  const foOrderVal = parseFloat(fo.orderValue)   || 0;
-  const foCash     = parseFloat(fo.cashReceived) || 0;
-  const foDelivery = parseFloat(fo.delivery)     || 0;
-  const foTip      = Math.max(0, foCash - foOrderVal);
-  const foExtra    = foTip + foDelivery;
-  const hasFO      = foOrderVal > 0 || foCash > 0 || foDelivery > 0;
   return {
     ts: new Date().toISOString(),
     cashHeld:      v.cashHeld,
@@ -986,7 +806,6 @@ function buildSnapshot() {
     tips:          v.tips,
     delivery:      v.deliveryTotal,
     wage:          v.wage,
-    finalOrder:    hasFO ? { orderValue: foOrderVal, cashReceived: foCash, delivery: foDelivery, tip: foTip, extra: foExtra } : null,
     total:         v.grand
   };
 }
@@ -1109,8 +928,7 @@ function copyShift(idx) {
 function isCalcEmpty() {
   const hasBase    = ['notes','coins','orders','delivery'].some(k => parseFloat(state[k].base) > 0 || state[k].entries.length > 0);
   const hasWage    = parseFloat(state.wage) > 0;
-  const hasFO      = Object.values(state.finalOrder).some(v => parseFloat(v) > 0);
-  return !hasBase && !hasWage && !hasFO;
+  return !hasBase && !hasWage;
 }
 
 function loadShift(idx) {
@@ -1128,18 +946,6 @@ function loadShift(idx) {
   state.orders   = { base: String(s.orders   || 0), entries: [] };
   state.delivery = { base: String(s.delivery || 0), entries: [] };
   state.wage     = String(s.wage || 0);
-
-  // Populate final order if present
-  if (s.finalOrder) {
-    state.finalOrder = {
-      orderValue:   String(s.finalOrder.orderValue   || 0),
-      wageReceived: String(s.finalOrder.wageReceived || 0),
-      cashReceived: String(s.finalOrder.cashReceived || 0),
-      delivery:     String(s.finalOrder.delivery     || 0)
-    };
-  } else {
-    state.finalOrder = { orderValue: '', cashReceived: '', delivery: '' };
-  }
 
   applyState();
   closeHistory();
@@ -1159,10 +965,8 @@ function resetAll() {
   if (!confirm('Reset all current values?\n(Shift history is kept.)')) return;
   ['notes','coins','orders','delivery'].forEach(k => { state[k] = { base: '', entries: [] }; });
   state.wage = '';
-  state.finalOrder = { orderValue: '', cashReceived: '', delivery: '' };
   localStorage.removeItem(STORE_KEY);
   applyState();
-  resetFinalOrderInputs();
 }
 
 // ── Apply state → DOM ────────────────────────────────────────
@@ -1177,105 +981,10 @@ function applyState() {
     const el = document.getElementById(id);
     if (el) el.classList.toggle('open', open);
   });
-  // Restore final order inputs
-  const fo = state.finalOrder || {};
-  const foFields = ['fo-order-value','fo-cash-received','fo-delivery'];
-  const foKeys   = ['orderValue','cashReceived','delivery'];
-  foFields.forEach((id, i) => {
-    const el = document.getElementById(id);
-    if (el) el.value = fo[foKeys[i]] || '';
-  });
   recalc();
-  recalcFinal();
 }
 
 function init() { load(); applyState(); }
-
-
-// ── Final Order panel ─────────────────────────────────────────
-function openFinalOrder()  { document.getElementById('finalPanel').classList.add('open'); }
-function closeFinalOrder() { document.getElementById('finalPanel').classList.remove('open'); }
-
-function resetFinalOrderInputs() {
-  ['fo-order-value','fo-cash-received','fo-delivery'].forEach(id => {
-    const el = document.getElementById(id); if (el) el.value = '';
-  });
-  recalcFinal();
-}
-
-function resetFinalOrder() {
-  if (!confirm('Clear final order values?')) return;
-  state.finalOrder = { orderValue: '', cashReceived: '', delivery: '' };
-  resetFinalOrderInputs();
-  recalc();
-}
-
-function recalcFinal() {
-  // Sync to state
-  const fo = state.finalOrder;
-  fo.orderValue   = document.getElementById('fo-order-value').value;
-  fo.cashReceived = document.getElementById('fo-cash-received').value;
-  fo.delivery     = document.getElementById('fo-delivery').value;
-
-  const orderVal  = parseFloat(fo.orderValue)   || 0;
-  const cashRcvd  = parseFloat(fo.cashReceived) || 0;
-  const delivery  = parseFloat(fo.delivery)     || 0;
-  const tip       = Math.max(0, cashRcvd - orderVal);
-  const foExtra   = tip + delivery;  // what adds on top of main total
-
-  // Main total WITHOUT final order (wage is already in there)
-  const mainWage       = parseFloat(state.wage) || 0;
-  const mainGrandNoFO  = (() => {
-    const notesT = fieldTotal('notes');
-    const coinsT = fieldTotal('coins');
-    const cashH  = notesT + coinsT;
-    const ordT   = fieldTotal('orders');
-    const delT   = fieldTotal('delivery');
-    const tips   = Math.max(0, cashH - ordT);
-    return tips + delT + mainWage;
-  })();
-
-  // Boss should pay: mainGrandNoFO − orderVal
-  const expectedFromBoss = mainGrandNoFO - orderVal;
-  // You get back from customer: cashRcvd (order repaid + possible tip)
-  // Final total in hand: expectedFromBoss + cashRcvd + delivery
-  const finalTotal = expectedFromBoss + cashRcvd + delivery;
-
-  // ── Verdict ──
-  const verdictCard = document.getElementById('fo-verdict-card');
-  const verdictIcon = document.getElementById('fo-v-icon');
-  const verdictText = document.getElementById('fo-v-text');
-
-  document.getElementById('fo-v-main-total').textContent = fmt(mainGrandNoFO);
-  document.getElementById('fo-v-order').textContent      = fmt(orderVal);
-  document.getElementById('fo-v-expected').textContent   = fmt(expectedFromBoss);
-
-  verdictCard.classList.remove('correct','wrong');
-  if (orderVal > 0) {
-    if (expectedFromBoss >= 0) {
-      verdictCard.classList.add('correct');
-      verdictIcon.textContent = '✓';
-      verdictText.textContent = 'Boss should pay you ' + fmt(expectedFromBoss);
-    } else {
-      verdictCard.classList.add('wrong');
-      verdictIcon.textContent = '✗';
-      verdictText.textContent = 'Order value exceeds total earnings';
-    }
-  } else {
-    verdictIcon.textContent = '—';
-    verdictText.textContent = 'Enter order value to check';
-  }
-
-  // ── Breakdown ──
-  document.getElementById('fo-wage-out').textContent     = fmt(expectedFromBoss);
-  document.getElementById('fo-cash-out').textContent     = fmt(cashRcvd);
-  document.getElementById('fo-tip').textContent          = fmt(tip);
-  document.getElementById('fo-delivery-out').textContent = fmt(delivery);
-  document.getElementById('fo-total').textContent        = fmt(finalTotal);
-
-  // Trigger main recalc so grand total updates
-  recalc();
-}
 
 
 // ── Ticket Scanner (Tesseract) ───────────────────────────────
