@@ -164,6 +164,12 @@
     overflow-y: auto; padding-bottom: 40px;
   }
   .history-panel.open { transform: translateX(0); }
+  .hist-backup-bar { display: flex; gap: 10px; padding: 16px 12px 8px; margin-top: 8px; border-top: 1px solid var(--border); }
+  .hist-backup-btn { flex: 1; padding: 13px; border-radius: 12px; font-family: 'Barlow Condensed', sans-serif; font-size: 14px; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; }
+  .hist-backup-btn.export { background: var(--green-dim); border: 1px solid var(--green); color: var(--green); }
+  .hist-backup-btn.export:active { background: rgba(76,175,80,0.25); }
+  .hist-backup-btn.import { background: rgba(96,192,240,0.12); border: 1px solid #60c0f0; color: #60c0f0; }
+  .hist-backup-btn.import:active { background: rgba(96,192,240,0.25); }
   .history-header {
     background: #111; padding: 14px 16px; display: flex; align-items: center; gap: 12px;
     border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10;
@@ -619,6 +625,11 @@
     <span class="history-count" id="historyCount"></span>
   </div>
   <div id="historyList"></div>
+  <div class="hist-backup-bar" id="histBackupBar">
+    <button class="hist-backup-btn export" onclick="exportBackup()">⬆ Export Backup</button>
+    <button class="hist-backup-btn import" onclick="document.getElementById('importFile').click()">⬇ Import Backup</button>
+    <input type="file" accept="application/json,.json" id="importFile" style="display:none" onchange="handleImportFile(event)">
+  </div>
 </div>
 
 <!-- ═══════════════════════════════ SCAN PANEL ═══════════════════════════ -->
@@ -887,6 +898,10 @@ function renderHistory() {
   count.textContent = history.length + ' shift' + (history.length !== 1 ? 's' : '');
   list.innerHTML = '';
 
+  // Export only makes sense with shifts present; Import stays available (restore onto empty)
+  const exportBtn = document.querySelector('.hist-backup-btn.export');
+  if (exportBtn) exportBtn.style.display = history.length === 0 ? 'none' : 'block';
+
   if (history.length === 0) {
     list.innerHTML = '<div class="history-empty">No shifts saved yet.<br>Tap <strong style="color:var(--green)">💾 Save Shift</strong><br>after completing a calculation.</div>';
     return;
@@ -960,6 +975,76 @@ function deleteShift(idx) {
   history.splice(idx, 1);
   saveHistory(history);
   renderHistory();
+}
+
+// ── Backup: export / import ──────────────────────────────────
+function exportBackup() {
+  const history = loadHistory();
+  if (history.length === 0) { showToast('No shifts to export'); return; }
+  const payload = {
+    app: 'bk-wage-calc',
+    type: 'shift-backup',
+    version: 1,
+    exported: new Date().toISOString(),
+    count: history.length,
+    shifts: history
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const d = new Date();
+  const stamp = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'bk-shifts-' + stamp + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  showToast('✓ Exported ' + history.length + ' shift' + (history.length !== 1 ? 's' : ''));
+}
+
+// Validate a parsed object looks like a real shift backup
+function isValidBackup(obj) {
+  if (!obj || typeof obj !== 'object') return false;
+  if (obj.type !== 'shift-backup' || !Array.isArray(obj.shifts)) return false;
+  // spot-check that shifts look like snapshots (have ts + total)
+  return obj.shifts.every(s => s && typeof s === 'object' && 'ts' in s && 'total' in s);
+}
+
+function handleImportFile(ev) {
+  const file = ev.target.files && ev.target.files[0];
+  ev.target.value = '';               // reset so same file can be re-picked
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    let parsed;
+    try { parsed = JSON.parse(reader.result); }
+    catch (e) { alert('That file isn\u2019t a valid backup (couldn\u2019t read it).'); return; }
+    if (!isValidBackup(parsed)) { alert('That file isn\u2019t a BK shift backup, or it\u2019s damaged. Nothing was changed.'); return; }
+    mergeImportedShifts(parsed.shifts);
+  };
+  reader.onerror = () => alert('Could not read that file. Nothing was changed.');
+  reader.readAsText(file);
+}
+
+function mergeImportedShifts(incoming) {
+  const current = loadHistory();
+  const seen = new Set(current.map(s => s.ts));
+  let added = 0;
+  incoming.forEach(s => {
+    if (!seen.has(s.ts)) { current.push(s); seen.add(s.ts); added++; }
+  });
+  if (added === 0) {
+    alert('Nothing new to import — all ' + incoming.length + ' shift' + (incoming.length !== 1 ? 's' : '') + ' are already in your history.');
+    return;
+  }
+  // newest first, then respect the cap
+  current.sort((a, b) => new Date(b.ts) - new Date(a.ts));
+  const trimmed = current.length > MAX_HISTORY;
+  if (trimmed) current.splice(MAX_HISTORY);
+  saveHistory(current);
+  renderHistory();
+  showToast('✓ Imported ' + added + ' new shift' + (added !== 1 ? 's' : '') + (trimmed ? ' (kept newest ' + MAX_HISTORY + ')' : ''));
 }
 
 // ── Reset ────────────────────────────────────────────────────
