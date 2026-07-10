@@ -372,6 +372,8 @@
   .scan-rev-thumb { width: 38px; height: 50px; border-radius: 8px; object-fit: cover; border: 1px solid var(--border); flex-shrink: 0; }
   .scan-rev-title { font-size: 13px; color: var(--muted); flex: 1; }
   .scan-rev-raw-btn { background: none; border: 1px solid var(--border); color: var(--muted); font-size: 11px; padding: 4px 9px; border-radius: 7px; cursor: pointer; }
+  .scan-rev-del-btn { background: none; border: 1px solid var(--border); color: #ff4444; font-size: 15px; width: 28px; height: 26px; border-radius: 7px; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; flex-shrink: 0; }
+  .scan-rev-del-btn:active { background: rgba(255,68,68,0.15); }
   .scan-rev-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-top: 1px solid var(--border); }
   .scan-rev-label { font-size: 13px; color: var(--muted); }
   .scan-rev-field { display: flex; align-items: center; gap: 4px; }
@@ -1159,7 +1161,8 @@ function scanShowReview() {
     card.innerHTML =
       '<div class="scan-rev-top"><img class="scan-rev-thumb" src="' + t.thumbUrl + '">' +
         '<span class="scan-rev-title">Ticket ' + (i+1) + '</span>' +
-        '<button class="scan-rev-raw-btn" onclick="scanToggleRaw(' + t.id + ')">raw</button></div>' +
+        '<button class="scan-rev-raw-btn" onclick="scanToggleRaw(' + t.id + ')">raw</button>' +
+        '<button class="scan-rev-del-btn" onclick="scanRemoveReviewed(' + t.id + ')" title="Remove ticket">✕</button></div>' +
       '<div class="scan-rev-row"><span class="scan-rev-label">🧾 TOTAL → Cash Orders</span>' +
         '<div class="scan-rev-field">£ <input class="scan-rev-input' + (t.order==null?' missing':'') + '" type="number" inputmode="decimal" data-scan-order="' + t.id + '" value="' + oVal + '" placeholder="—"></div></div>' +
       '<div class="scan-rev-row"><span class="scan-rev-label">🚗 Delivery Charge</span>' +
@@ -1173,6 +1176,32 @@ function scanShowReview() {
 }
 
 function scanToggleRaw(id) { document.getElementById('scanRaw-' + id).classList.toggle('show'); }
+
+// Sync any hand-edited review inputs back into scanTickets (so edits survive a re-render)
+function scanSyncReviewEdits() {
+  document.querySelectorAll('[data-scan-order]').forEach(inp => {
+    const t = scanTickets.find(x => x.id == inp.getAttribute('data-scan-order'));
+    if (t) { const v = parseFloat(inp.value); t.order = (v && v > 0) ? v : null; }
+  });
+  document.querySelectorAll('[data-scan-deliv]').forEach(inp => {
+    const t = scanTickets.find(x => x.id == inp.getAttribute('data-scan-deliv'));
+    if (t) { const v = parseFloat(inp.value); t.deliv = (v && v > 0) ? v : null; }
+  });
+}
+
+// Remove a single ticket after reading — drops it from review and queue
+function scanRemoveReviewed(id) {
+  scanSyncReviewEdits();                       // keep edits in the other cards
+  const t = scanTickets.find(x => x.id === id);
+  if (t) URL.revokeObjectURL(t.thumbUrl);
+  scanTickets = scanTickets.filter(x => x.id !== id);
+  scanRenderQueue();                           // keep the thumbnail grid in sync
+  if (scanTickets.length === 0) {
+    document.getElementById('scanReview').classList.remove('show');
+  } else {
+    scanShowReview();                          // re-render remaining cards with preserved values
+  }
+}
 
 // Push reviewed values into the calculator as entries (same path as + Add)
 function scanAddAll() {
