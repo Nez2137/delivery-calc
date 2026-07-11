@@ -403,6 +403,56 @@
   }
   .scan-add-btn:active { background: rgba(96,192,240,0.3); }
   .scan-note { margin-top: 14px; font-size: 11px; color: var(--faint); text-align: center; line-height: 1.8; }
+
+  /* ── Live camera ── */
+  .scan-cam-btn.live { background: rgba(76,175,80,0.15); border-color: var(--green); color: var(--green); margin-bottom: 10px; }
+  .scan-cam-btn.live:active { background: rgba(76,175,80,0.3); }
+  .livecam { position: fixed; inset: 0; background: #000; z-index: 400; display: none; }
+  .livecam.open { display: block; }
+  .livecam-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .livecam-top {
+    position: absolute; top: 0; left: 0; right: 0; z-index: 3;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 16px; background: linear-gradient(to bottom, rgba(0,0,0,0.6), transparent);
+  }
+  .livecam-close { background: rgba(0,0,0,0.5); border: none; color: #fff; width: 38px; height: 38px; border-radius: 50%; font-size: 20px; cursor: pointer; }
+  .livecam-count { color: #fff; font-family: 'Barlow Condensed', sans-serif; font-size: 15px; letter-spacing: 1px; background: rgba(0,0,0,0.5); padding: 7px 14px; border-radius: 16px; }
+  /* framing guide */
+  .livecam-guide {
+    position: absolute; top: 14%; left: 8%; right: 8%; bottom: 30%;
+    border: 2px dashed rgba(255,255,255,0.35); border-radius: 12px; z-index: 2; pointer-events: none;
+  }
+  .livecam-flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 5; transition: opacity 0.12s; }
+  .livecam-flash.fire { opacity: 0.75; transition: opacity 0s; }
+  .livecam-error {
+    position: absolute; top: 50%; left: 20px; right: 20px; transform: translateY(-50%);
+    background: rgba(20,20,20,0.95); border: 1px solid var(--orange); color: var(--orange);
+    border-radius: 12px; padding: 18px; text-align: center; font-size: 13px; line-height: 1.7;
+    display: none; z-index: 6;
+  }
+  .livecam-error.show { display: block; }
+  .livecam-bottom {
+    position: absolute; bottom: 0; left: 0; right: 0; z-index: 3;
+    background: linear-gradient(to top, rgba(0,0,0,0.85) 60%, transparent);
+    padding: 12px 16px 26px;
+  }
+  .livecam-strip { display: flex; gap: 6px; overflow-x: auto; min-height: 46px; margin-bottom: 10px; }
+  .livecam-thumb { width: 34px; height: 44px; border-radius: 6px; object-fit: cover; border: 1px solid rgba(255,255,255,0.35); flex-shrink: 0; animation: popIn 0.2s ease; }
+  @keyframes popIn { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .livecam-controls { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .livecam-hint { color: rgba(255,255,255,0.6); font-size: 11px; flex: 1; line-height: 1.4; }
+  .livecam-shutter {
+    width: 68px; height: 68px; border-radius: 50%; background: #fff; border: 4px solid rgba(255,255,255,0.4);
+    cursor: pointer; flex-shrink: 0; transition: transform 0.08s;
+  }
+  .livecam-shutter:active { transform: scale(0.9); }
+  .livecam-shutter:disabled { background: #666; }
+  .livecam-done {
+    background: var(--green); border: none; color: #fff; border-radius: 20px; padding: 11px 20px;
+    font-family: 'Barlow Condensed', sans-serif; font-size: 15px; letter-spacing: 1px;
+    text-transform: uppercase; cursor: pointer; flex: 1; max-width: 90px;
+  }
+  .livecam-done:active { opacity: 0.85; }
 </style>
 </head>
 <body>
@@ -652,6 +702,7 @@
     </div>
   </div>
   <div class="scan-wrap">
+    <button class="scan-cam-btn live" id="scanLiveBtn" onclick="openLiveCam()">🎥 Live Camera — Rapid Scan</button>
     <button class="scan-cam-btn" id="scanCamBtn" onclick="document.getElementById('scanFile').click()">📸 Add Ticket Photo</button>
     <input type="file" accept="image/*" capture="environment" id="scanFile" style="display:none" onchange="handleScanCapture(event)">
     <div class="scan-offline" id="scanOffline">You're offline — scanning needs internet to load the reader.<br>Enter values manually with + Add, or reconnect and try again.</div>
@@ -681,6 +732,32 @@
         TOTAL adds to Cash Orders · Delivery Charge adds to Delivery.<br>
         Green = read · Orange = check it. Tap “raw” to see what was read.
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ LIVE CAMERA VIEW ══════════════════════════ -->
+<div class="livecam" id="liveCam">
+  <video id="liveVideo" class="livecam-video" playsinline autoplay muted></video>
+  <canvas id="liveCanvas" style="display:none"></canvas>
+
+  <div class="livecam-top">
+    <button class="livecam-close" onclick="closeLiveCam()">✕</button>
+    <span class="livecam-count" id="liveCount">0 captured</span>
+  </div>
+
+  <div class="livecam-guide"></div>
+
+  <div class="livecam-flash" id="liveFlash"></div>
+
+  <div class="livecam-error" id="liveError"></div>
+
+  <div class="livecam-bottom">
+    <div class="livecam-strip" id="liveStrip"></div>
+    <div class="livecam-controls">
+      <span class="livecam-hint">Hold steady over the ticket, then tap</span>
+      <button class="livecam-shutter" id="liveShutter" onclick="liveCapture()"></button>
+      <button class="livecam-done" onclick="closeLiveCam()">Done</button>
     </div>
   </div>
 </div>
@@ -1105,17 +1182,122 @@ function openScan() {
   const offline = !navigator.onLine;
   document.getElementById('scanOffline').classList.toggle('show', offline);
   document.getElementById('scanCamBtn').disabled = offline;
+  const liveBtn = document.getElementById('scanLiveBtn');
+  if (liveBtn) liveBtn.disabled = offline;
 }
-function closeScan() { document.getElementById('scanPanel').classList.remove('open'); }
+function closeScan() {
+  if (liveStream) closeLiveCam();   // never leave the camera running
+  document.getElementById('scanPanel').classList.remove('open');
+}
 
 async function handleScanCapture(ev) {
   const file = ev.target.files && ev.target.files[0];
   ev.target.value = '';
   if (!file) return;
   const shrunk = await scanShrink(file);
-  const id = scanNextId++;
-  scanTickets.push({ id, blob: shrunk, thumbUrl: URL.createObjectURL(shrunk), status: 'pending', order: null, deliv: null, raw: '', tag: '' });
+  scanAddBlob(shrunk);
   scanRenderQueue();
+}
+
+// Shared: add a captured image blob to the queue (used by file picker AND live cam)
+function scanAddBlob(blob) {
+  const id = scanNextId++;
+  const t = { id, blob, thumbUrl: URL.createObjectURL(blob), status: 'pending', order: null, deliv: null, raw: '', tag: '' };
+  scanTickets.push(t);
+  return t;
+}
+
+// ── Live camera (rapid capture) ──────────────────────────────
+let liveStream = null;
+let liveBusy = false;
+
+async function openLiveCam() {
+  const cam = document.getElementById('liveCam');
+  const err = document.getElementById('liveError');
+  err.classList.remove('show');
+  cam.classList.add('open');
+  liveRenderStrip();
+
+  try {
+    liveStream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: { ideal: 'environment' },   // rear camera
+        width:  { ideal: 1920 },
+        height: { ideal: 1080 }
+      },
+      audio: false
+    });
+  } catch (e) {
+    err.innerHTML = 'Could not open the camera.<br><br>' +
+      (e && e.name === 'NotAllowedError'
+        ? 'Camera permission was denied. Allow camera access in your browser settings, or use “📸 Add Ticket Photo” instead.'
+        : 'Your device or browser may not support this. Use “📸 Add Ticket Photo” instead.');
+    err.classList.add('show');
+    return;
+  }
+  const video = document.getElementById('liveVideo');
+  video.srcObject = liveStream;
+  try { await video.play(); } catch (e) {}
+}
+
+function closeLiveCam() {
+  const cam = document.getElementById('liveCam');
+  cam.classList.remove('open');
+  if (liveStream) {
+    liveStream.getTracks().forEach(t => t.stop());   // release the camera
+    liveStream = null;
+  }
+  const video = document.getElementById('liveVideo');
+  if (video) video.srcObject = null;
+  scanRenderQueue();   // reflect anything captured back in the scan panel
+}
+
+async function liveCapture() {
+  if (liveBusy || !liveStream) return;
+  liveBusy = true;
+  const shutter = document.getElementById('liveShutter');
+  shutter.disabled = true;
+
+  // brief pause so autofocus can settle before we grab the frame —
+  // small text on tickets needs a sharp frame or OCR misreads it
+  await new Promise(r => setTimeout(r, 450));
+
+  const video  = document.getElementById('liveVideo');
+  const canvas = document.getElementById('liveCanvas');
+  const vw = video.videoWidth, vh = video.videoHeight;
+  if (!vw || !vh) { liveBusy = false; shutter.disabled = false; return; }
+
+  // draw the frame, scaled to our OCR-friendly width
+  let w = vw, h = vh;
+  if (w > SCAN_MAX_WIDTH) { h = Math.round(h * (SCAN_MAX_WIDTH / w)); w = SCAN_MAX_WIDTH; }
+  canvas.width = w; canvas.height = h;
+  canvas.getContext('2d').drawImage(video, 0, 0, w, h);
+
+  // shutter flash
+  const flash = document.getElementById('liveFlash');
+  flash.classList.add('fire');
+  setTimeout(() => flash.classList.remove('fire'), 90);
+
+  canvas.toBlob(blob => {
+    if (blob) { scanAddBlob(blob); liveRenderStrip(); }
+    liveBusy = false;
+    shutter.disabled = false;
+  }, 'image/jpeg', 0.85);
+}
+
+function liveRenderStrip() {
+  const strip = document.getElementById('liveStrip');
+  const count = document.getElementById('liveCount');
+  count.textContent = scanTickets.length + ' captured';
+  strip.innerHTML = '';
+  // show the most recent captures, newest last
+  scanTickets.slice(-12).forEach(t => {
+    const img = document.createElement('img');
+    img.className = 'livecam-thumb';
+    img.src = t.thumbUrl;
+    strip.appendChild(img);
+  });
+  strip.scrollLeft = strip.scrollWidth;
 }
 
 function scanShrink(file) {
@@ -1584,6 +1766,8 @@ async function requestWakeLock() {
 // Re-acquire if tab becomes visible again (required by the API)
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') requestWakeLock();
+  // release the camera if the app goes to the background
+  else if (liveStream) closeLiveCam();
 });
 
 requestWakeLock();
