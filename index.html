@@ -84,18 +84,22 @@
   @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
   .entry-index { color: var(--faint); font-size: 11px; width: 18px; }
   .entry-amount { color: var(--green); font-size: 15px; flex: 1; padding-left: 6px; }
+  .entry-tag { color: var(--muted); font-size: 11px; margin-left: 8px; font-family: 'Barlow Condensed', sans-serif; letter-spacing: 0.5px; }
   .entry-remove { background: none; border: none; color: #3a3a3a; font-size: 18px; cursor: pointer; padding: 2px 6px; border-radius: 4px; transition: color 0.15s; }
   .entry-remove:active { color: #ff4444; }
 
   .add-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
   .btn-add { background: var(--green-dim); border: 1px solid var(--green); color: var(--green); border-radius: 8px; padding: 8px 14px; font-family: 'Barlow Condensed', sans-serif; font-size: 15px; letter-spacing: 1px; cursor: pointer; white-space: nowrap; transition: background 0.15s; }
   .btn-add:active { background: rgba(76,175,80,0.25); }
-  .inline-add-wrap { display: none; align-items: center; gap: 6px; flex: 1; }
+  .inline-add-wrap { display: none; align-items: center; gap: 6px; flex: 1; flex-wrap: wrap; }
   .inline-add-wrap.visible { display: flex; }
   .add-prefix { color: var(--green); font-size: 16px; }
-  .add-input { flex: 1; background: #0a1a0e; border: 1px solid #1e3a24; border-radius: 8px; padding: 8px 10px; color: #a8e6b0; font-family: 'DM Mono', monospace; font-size: 16px; outline: none; -moz-appearance: textfield; appearance: textfield; }
+  .add-input { flex: 1; min-width: 80px; background: #0a1a0e; border: 1px solid #1e3a24; border-radius: 8px; padding: 8px 10px; color: #a8e6b0; font-family: 'DM Mono', monospace; font-size: 16px; outline: none; -moz-appearance: textfield; appearance: textfield; }
   .add-input::-webkit-outer-spin-button, .add-input::-webkit-inner-spin-button { -webkit-appearance: none; }
   .add-input:focus { border-color: var(--green); }
+  .add-tag-input { flex: 1 1 100%; background: #0e0e0e; border: 1px solid #333; border-radius: 8px; padding: 7px 10px; color: #ccc; font-family: 'Barlow Condensed', sans-serif; font-size: 14px; letter-spacing: 0.5px; outline: none; }
+  .add-tag-input:focus { border-color: var(--muted); }
+  .add-tag-input::placeholder { color: var(--faint); }
   .btn-confirm { background: var(--green); border: none; color: #fff; border-radius: 8px; padding: 8px 12px; font-size: 18px; cursor: pointer; transition: opacity 0.15s; }
   .btn-confirm:active { opacity: 0.7; }
   .btn-cancel { background: none; border: none; color: var(--faint); font-size: 20px; cursor: pointer; padding: 4px; }
@@ -388,6 +392,10 @@
   .scan-rev-input.missing { border-color: var(--orange); }
   .scan-rev-raw { display: none; margin-top: 10px; background: #0a0a0a; border: 1px solid var(--border); border-radius: 8px; padding: 10px; font-family: 'DM Mono', monospace; font-size: 12px; color: #a8e6b0; white-space: pre-wrap; word-break: break-word; line-height: 1.6; max-height: 180px; overflow-y: auto; }
   .scan-rev-raw.show { display: block; }
+  .scan-rev-tagrow { display: flex; align-items: center; gap: 6px; padding: 8px 0 2px; font-size: 13px; }
+  .scan-rev-tag { flex: 1; background: #0e0e0e; border: 1px solid #333; border-radius: 8px; padding: 7px 10px; color: #ccc; font-family: 'Barlow Condensed', sans-serif; font-size: 14px; letter-spacing: 0.5px; outline: none; }
+  .scan-rev-tag:focus { border-color: #60c0f0; }
+  .scan-rev-tag::placeholder { color: var(--faint); }
   .scan-add-btn {
     width: 100%; margin-top: 6px; background: rgba(96,192,240,0.15); border: 1px solid #60c0f0; color: #60c0f0;
     border-radius: 12px; padding: 15px; font-family: 'Barlow Condensed', sans-serif;
@@ -517,6 +525,7 @@
             <input class="add-input" type="number" inputmode="decimal" id="orders-add-input" placeholder="0.00" onkeydown="if(event.key==='Enter') confirmAdd('orders')">
             <button class="btn-confirm" onclick="confirmAdd('orders')">✓</button>
             <button class="btn-cancel"  onclick="hideInlineAdd('orders')">✕</button>
+            <input class="add-tag-input" type="text" id="orders-add-tag" placeholder="Label (optional) — e.g. address" onkeydown="if(event.key==='Enter') confirmAdd('orders')">
           </div>
         </div>
         <div class="combined-pill" id="orders-pill" style="display:none">
@@ -556,6 +565,7 @@
             <input class="add-input" type="number" inputmode="decimal" id="delivery-add-input" placeholder="0.00" onkeydown="if(event.key==='Enter') confirmAdd('delivery')">
             <button class="btn-confirm" onclick="confirmAdd('delivery')">✓</button>
             <button class="btn-cancel"  onclick="hideInlineAdd('delivery')">✕</button>
+            <input class="add-tag-input" type="text" id="delivery-add-tag" placeholder="Label (optional) — e.g. address" onkeydown="if(event.key==='Enter') confirmAdd('delivery')">
           </div>
         </div>
         <div class="combined-pill" id="delivery-pill" style="display:none">
@@ -711,9 +721,13 @@ function saveHistory(h) {
 
 // ── Formatting ───────────────────────────────────────────────
 function fmt(n) { return '£' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+// Entries may be a plain number (manual/old data) or { v, tag } (labelled).
+// These accessors read either shape so everything stays backward-compatible.
+function entryVal(e) { return (e && typeof e === 'object') ? (parseFloat(e.v) || 0) : (parseFloat(e) || 0); }
+function entryTag(e) { return (e && typeof e === 'object' && e.tag) ? String(e.tag) : ''; }
 function fieldTotal(key) {
   const f = state[key];
-  return (parseFloat(f.base) || 0) + f.entries.reduce((s, v) => s + v, 0);
+  return (parseFloat(f.base) || 0) + f.entries.reduce((s, e) => s + entryVal(e), 0);
 }
 function fmtDateTime(iso) {
   const d = new Date(iso);
@@ -727,10 +741,12 @@ function renderEntries(key) {
   const pill = document.getElementById(key + '-pill');
   const f    = state[key];
   list.innerHTML = '';
-  f.entries.forEach((val, i) => {
+  f.entries.forEach((e, i) => {
     const row = document.createElement('div');
     row.className = 'entry-row';
-    row.innerHTML = `<span class="entry-index">${i+1}.</span><span class="entry-amount">${fmt(val)}</span><button class="entry-remove" onclick="removeEntry('${key}',${i})">×</button>`;
+    const tag = entryTag(e);
+    const tagHtml = tag ? `<span class="entry-tag">${tag}</span>` : '';
+    row.innerHTML = `<span class="entry-index">${i+1}.</span><span class="entry-amount">${fmt(entryVal(e))}${tagHtml}</span><button class="entry-remove" onclick="removeEntry('${key}',${i})">×</button>`;
     list.appendChild(row);
   });
   const hasExtras = f.entries.length > 0;
@@ -747,12 +763,16 @@ function showInlineAdd(key) {
 function hideInlineAdd(key) {
   document.getElementById(key + '-inline').classList.remove('visible');
   document.getElementById(key + '-add-input').value = '';
+  const tagEl = document.getElementById(key + '-add-tag');
+  if (tagEl) tagEl.value = '';
 }
 function confirmAdd(key) {
   const input = document.getElementById(key + '-add-input');
   const val = parseFloat(input.value);
   if (!val || val <= 0) { input.focus(); return; }
-  state[key].entries.push(val);
+  const tagEl = document.getElementById(key + '-add-tag');
+  const tag = tagEl ? tagEl.value.trim() : '';
+  state[key].entries.push(tag ? { v: val, tag } : val);
   hideInlineAdd(key);
   renderEntries(key);
   recalc();
@@ -1094,7 +1114,7 @@ async function handleScanCapture(ev) {
   if (!file) return;
   const shrunk = await scanShrink(file);
   const id = scanNextId++;
-  scanTickets.push({ id, blob: shrunk, thumbUrl: URL.createObjectURL(shrunk), status: 'pending', order: null, deliv: null, raw: '' });
+  scanTickets.push({ id, blob: shrunk, thumbUrl: URL.createObjectURL(shrunk), status: 'pending', order: null, deliv: null, raw: '', tag: '' });
   scanRenderQueue();
 }
 
@@ -1176,6 +1196,7 @@ async function scanReadAll() {
       t.raw = data.text || '';
       t.order = scanExtractTotal(t.raw);
       t.deliv = scanExtractValue(t.raw, ['delivery','deliverv','deljvery','de1ivery','del charge','del ']);
+      t.tag = scanExtractAddress(t.raw);
       t.status = (t.order != null || t.deliv != null) ? 'done' : 'fail';
     } catch (e) { t.raw = 'ERROR: ' + e.message; t.status = 'fail'; }
     scanRenderQueue();
@@ -1231,6 +1252,54 @@ function scanExtractValue(text, labels) {
   return null;
 }
 
+// Address identifier — QOrder layout is: name → phone → address (wraps over
+// 1-3 lines) → postcode → "X.XX Miles". The address never sits in a fixed
+// position, and the phone line is often mangled by OCR (stray \ : . chars),
+// so we DON'T rely on it. Instead we anchor on the "Miles" line (the most
+// reliable landmark on every ticket) and walk UPWARD, collecting address
+// lines, skipping the postcode, and stopping at the phone line, a date/time,
+// or the header. Then keep the street portion (up to the first comma).
+function scanAddrIsJunk(ln) {
+  // date/time/header lines that must never become the address tag
+  return /order\s*time|\btime\b|\d{1,2}:\d{2}(:\d{2})?|jul|jan|feb|mar|apr|may|jun|aug|sep|oct|nov|dec|\b20\d{2}\b|\bsat\b|\bsun\b|\bmon\b|\btue\b|\bwed\b|\bthu\b|\bfri\b|menu\s*name|\bqty\b|\bprice\b/i.test(ln);
+}
+function scanAddrIsPostcode(ln) {
+  return /^[A-Z]{1,2}\d{1,2}[A-Z]?\s*\d?[A-Z]{0,2}$/i.test(ln.replace(/\s/g, ''));
+}
+function scanExtractAddress(text) {
+  const lines = text.split('\n').map(l => l.trim());
+  // primary anchor: the "Miles" line
+  let milesIdx = -1;
+  for (let i = 0; i < lines.length; i++) {
+    if (/\bmiles?\b/i.test(lines[i])) { milesIdx = i; break; }
+  }
+  if (milesIdx === -1) return '';   // safe: no reliable anchor, no guess
+
+  // walk upward from Miles, collecting up to 4 address lines
+  const collected = [];
+  for (let i = milesIdx - 1; i >= 0 && collected.length < 4; i--) {
+    const ln = lines[i];
+    if (!ln) continue;
+    if (scanAddrIsPostcode(ln)) continue;      // skip the postcode line
+    const digits = (ln.match(/\d/g) || []).length;
+    if (digits >= 9) break;                     // reached the phone line — address is above it, stop
+    if (scanAddrIsJunk(ln)) break;              // reached date/time/header — stop
+    collected.unshift(ln);
+  }
+  if (collected.length === 0) return '';
+  // join the wrapped block, keep the street portion (up to first comma)
+  const joined = collected.join(' ').replace(/\s+/g, ' ').trim();
+  const street = joined.split(',')[0].trim();
+  if (scanAddrIsJunk(street)) return '';        // final guard against date/time leaking through
+  return scanCleanTag(street);
+}
+function scanCleanTag(s) {
+  // strip stray OCR chars (incl. backslash) and trailing punctuation, cap length
+  let t = s.replace(/[|_\\]/g, '').replace(/\s+/g, ' ').trim().replace(/[,;:]+$/, '');
+  if (t.length > 28) t = t.slice(0, 28).trim() + '…';
+  return t;
+}
+
 function scanEscape(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 function scanShowReview() {
@@ -1248,6 +1317,7 @@ function scanShowReview() {
         '<span class="scan-rev-title">Ticket ' + (i+1) + '</span>' +
         '<button class="scan-rev-raw-btn" onclick="scanToggleRaw(' + t.id + ')">raw</button>' +
         '<button class="scan-rev-del-btn" onclick="scanRemoveReviewed(' + t.id + ')" title="Remove ticket">✕</button></div>' +
+      '<div class="scan-rev-tagrow">🏷 <input class="scan-rev-tag" type="text" data-scan-tag="' + t.id + '" value="' + scanEscape(t.tag || '') + '" placeholder="Label (address)"></div>' +
       '<div class="scan-rev-row"><span class="scan-rev-label">🧾 TOTAL → Cash Orders</span>' +
         '<div class="scan-rev-field">£ <input class="scan-rev-input' + (t.order==null?' missing':'') + '" type="number" inputmode="decimal" data-scan-order="' + t.id + '" value="' + oVal + '" placeholder="—"></div></div>' +
       '<div class="scan-rev-row"><span class="scan-rev-label">🚗 Delivery Charge</span>' +
@@ -1272,6 +1342,10 @@ function scanSyncReviewEdits() {
     const t = scanTickets.find(x => x.id == inp.getAttribute('data-scan-deliv'));
     if (t) { const v = parseFloat(inp.value); t.deliv = (v && v > 0) ? v : null; }
   });
+  document.querySelectorAll('[data-scan-tag]').forEach(inp => {
+    const t = scanTickets.find(x => x.id == inp.getAttribute('data-scan-tag'));
+    if (t) t.tag = inp.value.trim();
+  });
 }
 
 // Remove a single ticket after reading — drops it from review and queue
@@ -1290,14 +1364,27 @@ function scanRemoveReviewed(id) {
 
 // Push reviewed values into the calculator as entries (same path as + Add)
 function scanAddAll() {
+  scanSyncReviewEdits();   // ensure latest tag + value edits are captured
   let addedOrders = 0, addedDeliv = 0;
   document.querySelectorAll('[data-scan-order]').forEach(inp => {
+    const id = inp.getAttribute('data-scan-order');
+    const t = scanTickets.find(x => x.id == id);
     const v = parseFloat(inp.value);
-    if (v && v > 0) { state.orders.entries.push(v); addedOrders++; }
+    if (v && v > 0) {
+      const tag = t && t.tag ? t.tag : '';
+      state.orders.entries.push(tag ? { v, tag } : v);
+      addedOrders++;
+    }
   });
   document.querySelectorAll('[data-scan-deliv]').forEach(inp => {
+    const id = inp.getAttribute('data-scan-deliv');
+    const t = scanTickets.find(x => x.id == id);
     const v = parseFloat(inp.value);
-    if (v && v > 0) { state.delivery.entries.push(v); addedDeliv++; }
+    if (v && v > 0) {
+      const tag = t && t.tag ? t.tag : '';
+      state.delivery.entries.push(tag ? { v, tag } : v);
+      addedDeliv++;
+    }
   });
   if (addedOrders === 0 && addedDeliv === 0) { showToast('Nothing to add'); return; }
   renderEntries('orders');
