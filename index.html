@@ -393,6 +393,20 @@
   .scan-rev-raw { display: none; margin-top: 10px; background: #0a0a0a; border: 1px solid var(--border); border-radius: 8px; padding: 10px; font-family: 'DM Mono', monospace; font-size: 12px; color: #a8e6b0; white-space: pre-wrap; word-break: break-word; line-height: 1.6; max-height: 180px; overflow-y: auto; }
   .scan-rev-raw.show { display: block; }
   .scan-rev-tagrow { display: flex; align-items: center; gap: 6px; padding: 8px 0 2px; font-size: 13px; }
+  /* cash / card toggle */
+  .scan-pay-toggle { display: flex; gap: 6px; padding: 4px 0 2px; }
+  .scan-pay-btn {
+    flex: 1; background: #0e0e0e; border: 1px solid #333; color: var(--muted);
+    border-radius: 8px; padding: 8px; font-family: 'Barlow Condensed', sans-serif;
+    font-size: 14px; letter-spacing: 1px; cursor: pointer; transition: all 0.15s;
+  }
+  .scan-pay-btn.active { background: var(--green-dim); border-color: var(--green); color: var(--green); }
+  .scan-pay-btn.active.card { background: rgba(96,192,240,0.15); border-color: #60c0f0; color: #60c0f0; }
+  .scan-rev-card.card { border-color: rgba(96,192,240,0.4); }
+  /* excluded (card) TOTAL row */
+  .scan-rev-row.excluded { opacity: 0.45; }
+  .scan-rev-row.excluded .scan-rev-input { border-color: #2a2a2a; color: var(--faint); }
+  .scan-excl-note { display: block; font-size: 10px; color: #60c0f0; margin-top: 2px; letter-spacing: 0.5px; }
   .scan-rev-tag { flex: 1; background: #0e0e0e; border: 1px solid #333; border-radius: 8px; padding: 7px 10px; color: #ccc; font-family: 'Barlow Condensed', sans-serif; font-size: 14px; letter-spacing: 0.5px; outline: none; }
   .scan-rev-tag:focus { border-color: #60c0f0; }
   .scan-rev-tag::placeholder { color: var(--faint); }
@@ -1202,7 +1216,7 @@ async function handleScanCapture(ev) {
 // Shared: add a captured image blob to the queue (used by file picker AND live cam)
 function scanAddBlob(blob) {
   const id = scanNextId++;
-  const t = { id, blob, thumbUrl: URL.createObjectURL(blob), status: 'pending', order: null, deliv: null, raw: '', tag: '' };
+  const t = { id, blob, thumbUrl: URL.createObjectURL(blob), status: 'pending', order: null, deliv: null, raw: '', tag: '', pay: 'cash' };
   scanTickets.push(t);
   return t;
 }
@@ -1492,16 +1506,22 @@ function scanShowReview() {
     if (t.order != null || t.deliv != null) readCount++;
     const oVal = t.order != null ? t.order.toFixed(2) : '';
     const dVal = t.deliv != null ? t.deliv.toFixed(2) : '';
+    const isCard = t.pay === 'card';
     const card = document.createElement('div');
-    card.className = 'scan-rev-card' + (t.status === 'fail' ? ' fail' : '');
+    card.className = 'scan-rev-card' + (t.status === 'fail' ? ' fail' : '') + (isCard ? ' card' : '');
     card.innerHTML =
       '<div class="scan-rev-top"><img class="scan-rev-thumb" src="' + t.thumbUrl + '">' +
         '<span class="scan-rev-title">Ticket ' + (i+1) + '</span>' +
         '<button class="scan-rev-raw-btn" onclick="scanToggleRaw(' + t.id + ')">raw</button>' +
         '<button class="scan-rev-del-btn" onclick="scanRemoveReviewed(' + t.id + ')" title="Remove ticket">✕</button></div>' +
+      '<div class="scan-pay-toggle">' +
+        '<button class="scan-pay-btn' + (!isCard ? ' active' : '') + '" onclick="scanSetPay(' + t.id + ',\'cash\')">💷 Cash</button>' +
+        '<button class="scan-pay-btn' + (isCard ? ' active card' : '') + '" onclick="scanSetPay(' + t.id + ',\'card\')">💳 Card</button>' +
+      '</div>' +
       '<div class="scan-rev-tagrow">🏷 <input class="scan-rev-tag" type="text" data-scan-tag="' + t.id + '" value="' + scanEscape(t.tag || '') + '" placeholder="Label (address)"></div>' +
-      '<div class="scan-rev-row"><span class="scan-rev-label">🧾 TOTAL → Cash Orders</span>' +
-        '<div class="scan-rev-field">£ <input class="scan-rev-input' + (t.order==null?' missing':'') + '" type="number" inputmode="decimal" data-scan-order="' + t.id + '" value="' + oVal + '" placeholder="—"></div></div>' +
+      '<div class="scan-rev-row' + (isCard ? ' excluded' : '') + '"><span class="scan-rev-label">🧾 TOTAL → Cash Orders' +
+        (isCard ? '<span class="scan-excl-note">excluded — paid by card</span>' : '') + '</span>' +
+        '<div class="scan-rev-field">£ <input class="scan-rev-input' + (t.order==null && !isCard ?' missing':'') + '" type="number" inputmode="decimal" data-scan-order="' + t.id + '" value="' + oVal + '" placeholder="—"' + (isCard ? ' disabled' : '') + '></div></div>' +
       '<div class="scan-rev-row"><span class="scan-rev-label">🚗 Delivery Charge</span>' +
         '<div class="scan-rev-field">£ <input class="scan-rev-input' + (t.deliv==null?' missing':'') + '" type="number" inputmode="decimal" data-scan-deliv="' + t.id + '" value="' + dVal + '" placeholder="—"></div></div>' +
       '<div class="scan-rev-raw" id="scanRaw-' + t.id + '">' + scanEscape(t.raw.trim() || '(nothing read)') + '</div>';
@@ -1513,6 +1533,17 @@ function scanShowReview() {
 }
 
 function scanToggleRaw(id) { document.getElementById('scanRaw-' + id).classList.toggle('show'); }
+
+// Flip a ticket between cash and card. Card = TOTAL excluded from Cash Orders
+// (customer paid the restaurant directly, so you never held that cash) but the
+// delivery charge is still earned and still counted.
+function scanSetPay(id, mode) {
+  scanSyncReviewEdits();                 // preserve any hand edits before re-render
+  const t = scanTickets.find(x => x.id === id);
+  if (!t) return;
+  t.pay = mode;
+  scanShowReview();
+}
 
 // Sync any hand-edited review inputs back into scanTickets (so edits survive a re-render)
 function scanSyncReviewEdits() {
@@ -1544,13 +1575,17 @@ function scanRemoveReviewed(id) {
   }
 }
 
-// Push reviewed values into the calculator as entries (same path as + Add)
+// Push reviewed values into the calculator as entries (same path as + Add).
+// Card-paid tickets contribute ONLY their delivery charge — their TOTAL is
+// excluded because the customer paid the restaurant directly, so that cash
+// never passed through your hands (including it would wrongly deflate tips).
 function scanAddAll() {
   scanSyncReviewEdits();   // ensure latest tag + value edits are captured
-  let addedOrders = 0, addedDeliv = 0;
+  let addedOrders = 0, addedDeliv = 0, cardSkipped = 0;
   document.querySelectorAll('[data-scan-order]').forEach(inp => {
     const id = inp.getAttribute('data-scan-order');
     const t = scanTickets.find(x => x.id == id);
+    if (t && t.pay === 'card') { cardSkipped++; return; }   // card → no cash order
     const v = parseFloat(inp.value);
     if (v && v > 0) {
       const tag = t && t.tag ? t.tag : '';
@@ -1578,7 +1613,7 @@ function scanAddAll() {
   scanRenderQueue();
   document.getElementById('scanReview').classList.remove('show');
   closeScan();
-  showToast('✓ Added ' + addedOrders + ' order' + (addedOrders!==1?'s':'') + ', ' + addedDeliv + ' delivery');
+  showToast('✓ Added ' + addedOrders + ' order' + (addedOrders!==1?'s':'') + ', ' + addedDeliv + ' delivery' + (cardSkipped ? ' · ' + cardSkipped + ' card' : ''));
 }
 
 // ── Mini Calculator ──────────────────────────────────────────
