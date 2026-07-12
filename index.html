@@ -930,7 +930,14 @@ function buildSnapshot() {
     tips:          v.tips,
     delivery:      v.deliveryTotal,
     wage:          v.wage,
-    total:         v.grand
+    total:         v.grand,
+    // Full detail for the ticket fields so a restore brings back the individual
+    // entries and their address labels — not just the collapsed total.
+    // (Notes/coins are plain cash counts, so their total is enough.)
+    detail: {
+      orders:   { base: state.orders.base   || '', entries: JSON.parse(JSON.stringify(state.orders.entries   || [])) },
+      delivery: { base: state.delivery.base || '', entries: JSON.parse(JSON.stringify(state.delivery.entries || [])) }
+    }
   };
 }
 
@@ -1068,12 +1075,30 @@ function loadShift(idx) {
     if (!confirm('Current values will be overwritten with this shift. Continue?')) return;
   }
 
-  // Populate main fields — snapshot only stores totals so load into base fields
-  state.notes    = { base: String(s.notes    || 0), entries: [] };
-  state.coins    = { base: String(s.coins    || 0), entries: [] };
-  state.orders   = { base: String(s.orders   || 0), entries: [] };
-  state.delivery = { base: String(s.delivery || 0), entries: [] };
-  state.wage     = String(s.wage || 0);
+  // Notes/coins are plain cash counts — the total is all we need
+  state.notes = { base: String(s.notes || 0), entries: [] };
+  state.coins = { base: String(s.coins || 0), entries: [] };
+  state.wage  = String(s.wage || 0);
+
+  // Orders/delivery: restore the individual entries (with their address labels)
+  // if the shift was saved with full detail. Shifts saved before this feature
+  // have no `detail`, so fall back to loading the total into the base field.
+  if (s.detail && s.detail.orders && Array.isArray(s.detail.orders.entries)) {
+    state.orders = {
+      base: s.detail.orders.base || '',
+      entries: JSON.parse(JSON.stringify(s.detail.orders.entries))
+    };
+  } else {
+    state.orders = { base: String(s.orders || 0), entries: [] };
+  }
+  if (s.detail && s.detail.delivery && Array.isArray(s.detail.delivery.entries)) {
+    state.delivery = {
+      base: s.detail.delivery.base || '',
+      entries: JSON.parse(JSON.stringify(s.detail.delivery.entries))
+    };
+  } else {
+    state.delivery = { base: String(s.delivery || 0), entries: [] };
+  }
 
   applyState();
   closeHistory();
