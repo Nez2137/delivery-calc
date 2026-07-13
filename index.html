@@ -4,103 +4,123 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="mobile-web-app-capable" content="yes">
-<title>BK Wage Calc</title>
-<meta name="theme-color" content="#6b0000">
+<title>Float</title>
+<meta name="theme-color" content="#0B0D0F">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="BK Wage Calc">
+<meta name="apple-mobile-web-app-title" content="Float">
 <link rel="manifest" href="./manifest.json" crossorigin="use-credentials">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --bg: #0a0a0a; --surface: #141414; --surface2: #1c1c1c; --border: #2a2a2a;
-    --orange: #ff6b35; --orange-dim: rgba(255,107,53,0.15);
-    --green: #4caf50; --green-dim: rgba(76,175,80,0.1);
-    --text: #fff; --muted: #888; --faint: #444;
+    /* neutrals — the interface is grey; colour only where it means something */
+    --bg: #0B0D0F; --surface: #14171A; --surface2: #1A1E22; --border: #23282E;
+    --text: #F2F4F5; --muted: #8B949E; --faint: #4A525A;
+    /* accent — interaction only: active section, focus, primary action */
+    --accent: #5B9DF9; --accent-dim: rgba(91,157,249,0.12); --accent-line: rgba(91,157,249,0.35);
+    /* meaning — money you keep / money you owe */
+    --keep: #4ADE80; --keep-dim: rgba(74,222,128,0.10);
+    --owe:  #F87171; --owe-dim:  rgba(248,113,113,0.10);
+    /* legacy aliases kept so nothing breaks */
+    --orange: #5B9DF9; --orange-dim: rgba(91,157,249,0.12);
+    --green: #4ADE80; --green-dim: rgba(74,222,128,0.10);
+    --surface-2: #1A1E22;
   }
   html { background: var(--bg); }
   body {
     background: var(--bg); color: var(--text);
-    font-family: 'DM Mono', monospace;
+    font-family: 'Space Grotesk', -apple-system, system-ui, sans-serif;
     min-height: 100vh; padding-bottom: 48px;
     -webkit-tap-highlight-color: transparent;
   }
 
   /* ── Header ── */
   .header {
-    background: linear-gradient(160deg, #8b0000 0%, #6b0000 60%, #4a0000 100%);
-    padding: 16px 16px 14px; margin-bottom: 14px; position: relative; overflow: hidden;
+    background: var(--surface);
+    padding: 18px 16px 16px; margin-bottom: 14px;
     display: flex; align-items: center; justify-content: space-between;
-    border-bottom: 2px solid #cc0000;
+    border-bottom: 1px solid var(--border);
   }
-  .header::before {
-    content: ''; position: absolute; inset: 0;
-    background: radial-gradient(ellipse at 30% 50%, rgba(180,0,0,0.4) 0%, transparent 70%);
-    pointer-events: none;
+  .header-mark {
+    display: flex; align-items: center; gap: 11px;
   }
-  .header::after { content: ''; position: absolute; right: -20px; top: -20px; width: 140px; height: 140px; border-radius: 50%; background: rgba(255,255,255,0.03); pointer-events: none; }
-  .header-brand { font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 700; color: #f5c518; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 1px; text-shadow: 0 1px 6px rgba(0,0,0,0.6); }
-  .header-sub { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 3px; color: rgba(255,255,255,0.6); text-transform: uppercase; margin-bottom: 2px; }
-  .header-title { font-family: 'Barlow Condensed', sans-serif; font-size: 26px; font-weight: 700; color: #fff; letter-spacing: 1px; }
+  .header-glyph {
+    width: 34px; height: 34px; border-radius: 9px;
+    background: var(--accent); color: #0B0D0F;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .header-glyph svg { width: 19px; height: 19px; }
+  .header-title {
+    font-family: 'Space Grotesk', sans-serif; font-size: 23px; font-weight: 700;
+    color: var(--text); letter-spacing: -0.5px; line-height: 1.1;
+  }
+  .header-sub {
+    font-size: 11px; color: var(--muted); letter-spacing: 0.2px; margin-top: 1px;
+  }
   .header-hist-btn {
-    background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.2);
-    color: #fff; border-radius: 8px; padding: 7px 11px;
-    font-family: 'Barlow Condensed', sans-serif; font-size: 12px; letter-spacing: 1px;
-    cursor: pointer; text-transform: uppercase; white-space: nowrap;
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--muted); border-radius: 9px; padding: 8px 10px;
+    font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 500;
+    letter-spacing: 0; cursor: pointer; text-transform: none; white-space: nowrap;
+    display: flex; align-items: center; gap: 6px; transition: color .15s, border-color .15s;
   }
-  .header-btns { display: flex; flex-direction: column; gap: 6px; z-index: 2; flex-shrink: 0; }
+  .header-hist-btn:active { color: var(--text); border-color: var(--faint); }
+  .header-hist-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+  .header-btns { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
 
   .wrap { padding: 0 12px; }
+  .ico { width: 15px; height: 15px; flex-shrink: 0; vertical-align: -2px; margin-right: 7px; }
+  .section-label .ico { margin-right: 8px; }
 
   /* ── Section ── */
-  .section { background: var(--surface); border-radius: 14px; margin-bottom: 12px; border: 1px solid var(--border); overflow: hidden; transition: border-color 0.2s; }
-  .section.open { border-color: var(--accent, #ff6b35); }
+  .section { background: var(--surface); border-radius: 12px; margin-bottom: 10px; border: 1px solid var(--border); overflow: hidden; transition: border-color .18s; }
+  .section.open { border-color: var(--accent-line); }
   .section-header { width: 100%; background: none; border: none; cursor: pointer; padding: 13px 16px; display: flex; justify-content: space-between; align-items: center; }
-  .section-label { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 16px; color: var(--accent, #ff6b35); letter-spacing: 1px; text-transform: uppercase; }
+  .section-label { display: flex; align-items: center; font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 14px; color: var(--muted); letter-spacing: 0; text-transform: none; transition: color .18s; }
+  .section.open .section-label { color: var(--text); }
   .section-right { display: flex; align-items: center; gap: 12px; }
-  .section-total { font-family: 'DM Mono', monospace; color: #fff; font-size: 16px; }
+  .section-total { font-family: 'JetBrains Mono', monospace; font-weight: 500; color: var(--text); font-size: 15px; font-variant-numeric: tabular-nums; }
   .chevron { color: var(--faint); font-size: 14px; transition: transform 0.2s; }
   .section.open .chevron { transform: rotate(180deg); }
   .section-body { padding: 0 16px 14px; display: none; }
   .section.open .section-body { display: block; }
 
   /* ── Inputs ── */
-  .input-label { color: var(--muted); font-size: 11px; margin-bottom: 4px; letter-spacing: 0.5px; margin-top: 2px; }
+  .input-label { color: var(--muted); font-size: 12px; margin-bottom: 6px; margin-top: 2px; }
   .input-wrap { display: flex; align-items: center; gap: 8px; }
-  .input-prefix { color: var(--orange); font-size: 18px; }
-  .num-input {
-    flex: 1; background: #0e0e0e; border: 1px solid #333; border-radius: 8px;
-    padding: 10px 12px; color: #fff; font-family: 'DM Mono', monospace; font-size: 18px;
-    outline: none; -moz-appearance: textfield; appearance: textfield;
-  }
+  .input-prefix { color: var(--faint); font-size: 15px; font-family: 'JetBrains Mono', monospace; }
+  .num-input { flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 9px; padding: 11px 12px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 17px; font-variant-numeric: tabular-nums; outline: none; -moz-appearance: textfield; appearance: textfield; transition: border-color .15s; }
   .num-input::-webkit-outer-spin-button, .num-input::-webkit-inner-spin-button { -webkit-appearance: none; }
-  .num-input:focus { border-color: var(--orange); }
+  .num-input:focus { border-color: var(--accent); }
 
   /* ── Add entries ── */
   .entries-list { margin-top: 8px; }
   .entry-row { display: flex; align-items: center; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #1e1e1e; animation: fadeIn 0.15s ease; }
   @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
-  .entry-index { color: var(--faint); font-size: 11px; width: 18px; }
-  .entry-amount { color: var(--green); font-size: 15px; flex: 1; padding-left: 6px; }
-  .entry-tag { color: var(--muted); font-size: 11px; margin-left: 8px; font-family: 'Barlow Condensed', sans-serif; letter-spacing: 0.5px; }
+  .entry-index { color: var(--faint); font-size: 11px; width: 18px; font-family: 'JetBrains Mono', monospace; }
+  .entry-amount { color: var(--text); font-size: 14px; flex: 1; padding-left: 6px; font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
+  .entry-tag { color: var(--muted); font-size: 11px; margin-left: 8px; font-family: 'Space Grotesk', sans-serif; letter-spacing: 0; }
   .entry-remove { background: none; border: none; color: #3a3a3a; font-size: 18px; cursor: pointer; padding: 2px 6px; border-radius: 4px; transition: color 0.15s; }
   .entry-remove:active { color: #ff4444; }
 
   .add-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
-  .btn-add { background: var(--green-dim); border: 1px solid var(--green); color: var(--green); border-radius: 8px; padding: 8px 14px; font-family: 'Barlow Condensed', sans-serif; font-size: 15px; letter-spacing: 1px; cursor: pointer; white-space: nowrap; transition: background 0.15s; }
+  .btn-add { display: flex; align-items: center; background: var(--accent-dim); border: 1px solid var(--accent-line); color: var(--accent); border-radius: 9px; padding: 9px 13px; font-family: 'Space Grotesk', sans-serif; font-weight: 500; font-size: 13px; letter-spacing: 0; cursor: pointer; white-space: nowrap; transition: background .15s; }
   .btn-add:active { background: rgba(76,175,80,0.25); }
   .inline-add-wrap { display: none; align-items: center; gap: 6px; flex: 1; flex-wrap: wrap; }
   .inline-add-wrap.visible { display: flex; }
-  .add-prefix { color: var(--green); font-size: 16px; }
-  .add-input { flex: 1; min-width: 80px; background: #0a1a0e; border: 1px solid #1e3a24; border-radius: 8px; padding: 8px 10px; color: #a8e6b0; font-family: 'DM Mono', monospace; font-size: 16px; outline: none; -moz-appearance: textfield; appearance: textfield; }
+  .add-prefix { color: var(--faint); font-size: 14px; font-family: 'JetBrains Mono', monospace; }
+  .add-input { flex: 1; min-width: 80px; background: var(--bg); border: 1px solid var(--border); border-radius: 9px; padding: 9px 11px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 15px; outline: none; -moz-appearance: textfield; appearance: textfield; }
   .add-input::-webkit-outer-spin-button, .add-input::-webkit-inner-spin-button { -webkit-appearance: none; }
-  .add-input:focus { border-color: var(--green); }
-  .add-tag-input { flex: 1 1 100%; background: #0e0e0e; border: 1px solid #333; border-radius: 8px; padding: 7px 10px; color: #ccc; font-family: 'Barlow Condensed', sans-serif; font-size: 14px; letter-spacing: 0.5px; outline: none; }
+  .add-input:focus { border-color: var(--accent); }
+  .add-tag-input { flex: 1 1 100%; background: #0e0e0e; border: 1px solid #333; border-radius: 8px; padding: 7px 10px; color: #ccc; font-family: 'Space Grotesk', sans-serif; font-size: 14px; letter-spacing: 0.5px; outline: none; }
   .add-tag-input:focus { border-color: var(--muted); }
   .add-tag-input::placeholder { color: var(--faint); }
-  .btn-confirm { background: var(--green); border: none; color: #fff; border-radius: 8px; padding: 8px 12px; font-size: 18px; cursor: pointer; transition: opacity 0.15s; }
+  .btn-confirm { background: var(--accent); border: none; color: #0B0D0F; border-radius: 9px; padding: 9px 13px; font-size: 15px; font-weight: 600; cursor: pointer; }
   .btn-confirm:active { opacity: 0.7; }
   .btn-cancel { background: none; border: none; color: var(--faint); font-size: 20px; cursor: pointer; padding: 4px; }
 
@@ -109,56 +129,45 @@
   .combined-val { font-size: 16px; color: var(--green); }
 
   /* ── Banners ── */
-  .cash-held-banner { background: var(--surface2); border-radius: 12px; padding: 12px 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
-  .cash-held-label { font-family: 'Barlow Condensed', sans-serif; font-size: 15px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+  .cash-held-banner { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 13px 16px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+  .cash-held-label { font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--muted); }
   .tips-banner { border-radius: 12px; padding: 12px 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border); background: var(--surface); transition: background 0.3s, border-color 0.3s; }
-  .tips-banner.positive { background: var(--green-dim); border-color: var(--green); }
-  .tips-title { font-family: 'Barlow Condensed', sans-serif; font-size: 16px; text-transform: uppercase; letter-spacing: 1px; color: var(--faint); }
-  .tips-banner.positive .tips-title { color: var(--green); }
-  .tips-sub { font-size: 10px; color: #333; margin-top: 2px; }
-  .tips-val { font-size: 24px; color: var(--faint); }
-  .tips-banner.positive .tips-val { color: var(--green); }
+  .tips-banner.positive { background: var(--keep-dim); border-color: rgba(74,222,128,0.4); }
+  .tips-title { display: flex; align-items: center; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--muted); }
+  .tips-banner.positive .tips-title { color: var(--keep); }
+  .tips-sub { font-size: 11px; color: var(--faint); margin-top: 2px; }
+  .tips-val { font-size: 21px; color: var(--faint); font-family: 'JetBrains Mono', monospace; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .tips-banner.positive .tips-val { color: var(--keep); }
 
   /* ── Summary ── */
-  .summary-card { background: var(--surface); border: 1px solid var(--orange-dim); border-radius: 14px; padding: 14px 16px; margin-bottom: 10px; }
-  .summary-heading { font-family: 'Barlow Condensed', sans-serif; color: var(--orange); font-size: 12px; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 8px; }
+  .summary-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px 18px; margin-bottom: 10px; }
+  .summary-heading { font-family: 'Space Grotesk', sans-serif; color: var(--muted); font-size: 11px; font-weight: 500; letter-spacing: 0.6px; text-transform: uppercase; margin-bottom: 10px; }
   .summary-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-top: 1px solid var(--border); }
-  .summary-row-label { font-size: 14px; color: var(--muted); }
-  .summary-row-val { font-size: 15px; color: #fff; }
-  .summary-total-row { display: flex; justify-content: space-between; align-items: center; padding: 13px 0 0; border-top: 2px solid var(--orange); margin-top: 6px; }
-  .summary-total-label { font-family: 'Barlow Condensed', sans-serif; font-size: 20px; text-transform: uppercase; letter-spacing: 1px; color: var(--orange); }
-  .summary-total-val { font-size: 26px; font-weight: 500; color: var(--orange); }
+  .summary-row-label { font-size: 13px; color: var(--muted); }
+  .summary-row-val { font-size: 14px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
+  .summary-total-row { display: flex; justify-content: space-between; align-items: baseline; padding: 16px 0 0; border-top: 1px solid var(--border); margin-top: 10px; }
+  .summary-total-label { font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--muted); }
+  .summary-total-val { font-family: 'JetBrains Mono', monospace; font-size: 34px; font-weight: 600; color: var(--keep); letter-spacing: -1px; font-variant-numeric: tabular-nums; line-height: 1; }
 
   /* ── Buttons row ── */
   .btn-row { display: flex; gap: 10px; margin-bottom: 0; }
-  .export-btn {
-    flex: 1; padding: 14px; border-radius: 12px;
-    border: 1px solid var(--green); background: var(--green-dim);
-    color: var(--green); font-family: 'Barlow Condensed', sans-serif;
-    font-size: 15px; letter-spacing: 2px; text-transform: uppercase;
-    cursor: pointer; transition: background 0.15s;
-  }
+  .export-btn { flex: 1; display: flex; align-items: center; justify-content: center; padding: 14px; border-radius: 11px; border: 1px solid var(--accent-line); background: var(--accent-dim); color: var(--accent); font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 600; letter-spacing: 0; text-transform: none; cursor: pointer; }
   .export-btn:active { background: rgba(76,175,80,0.3); }
-  .reset-btn {
-    flex: 1; padding: 14px; border-radius: 12px; border: 1px solid var(--border);
-    background: transparent; color: var(--faint);
-    font-family: 'Barlow Condensed', sans-serif; font-size: 15px; letter-spacing: 2px;
-    text-transform: uppercase; cursor: pointer; transition: border-color 0.2s, color 0.2s;
-  }
-  .reset-btn:active { border-color: #ff3a3a; color: #ff3a3a; }
+  .reset-btn { flex: 1; padding: 14px; border-radius: 11px; border: 1px solid var(--border); background: transparent; color: var(--muted); font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 500; letter-spacing: 0; text-transform: none; cursor: pointer; transition: color .15s, border-color .15s; }
+  .reset-btn:active { border-color: var(--owe); color: var(--owe); }
 
   /* ── Toast ── */
   .copy-toast {
     position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
-    background: #1e3a24; border: 1px solid var(--green); color: var(--green);
-    font-family: 'Barlow Condensed', sans-serif; font-size: 14px; letter-spacing: 1px;
+    background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+    font-family: 'Space Grotesk', sans-serif; font-size: 14px; letter-spacing: 1px;
     padding: 10px 22px; border-radius: 20px; opacity: 0; pointer-events: none;
     transition: opacity 0.3s; white-space: nowrap; z-index: 999;
   }
   .copy-toast.show { opacity: 1; }
 
   /* ── Saved dot ── */
-  .saved-dot { position: fixed; top: 12px; right: 14px; font-size: 10px; color: rgba(76,175,80,0.7); letter-spacing: 1px; opacity: 0; transition: opacity 0.5s; pointer-events: none; }
+  .saved-dot { position: fixed; top: 12px; right: 14px; font-size: 10px; color: var(--muted); letter-spacing: 1px; opacity: 0; transition: opacity 0.5s; pointer-events: none; }
   .saved-dot.show { opacity: 1; }
 
   /* ── History panel ── */
@@ -169,35 +178,32 @@
   }
   .history-panel.open { transform: translateX(0); }
   .hist-backup-bar { display: flex; gap: 10px; padding: 16px 12px 8px; margin-top: 8px; border-top: 1px solid var(--border); }
-  .hist-backup-btn { flex: 1; padding: 13px; border-radius: 12px; font-family: 'Barlow Condensed', sans-serif; font-size: 14px; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; }
+  .hist-backup-btn { flex: 1; padding: 13px; border-radius: 12px; font-family: 'Space Grotesk', sans-serif; font-size: 14px; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; }
   .hist-backup-btn.export { background: var(--green-dim); border: 1px solid var(--green); color: var(--green); }
   .hist-backup-btn.export:active { background: rgba(76,175,80,0.25); }
-  .hist-backup-btn.import { background: rgba(96,192,240,0.12); border: 1px solid #60c0f0; color: #60c0f0; }
-  .hist-backup-btn.import:active { background: rgba(96,192,240,0.25); }
-  .history-header {
-    background: #111; padding: 14px 16px; display: flex; align-items: center; gap: 12px;
-    border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10;
-  }
-  .history-back { background: none; border: none; color: var(--orange); font-size: 24px; cursor: pointer; padding: 2px 6px; }
-  .history-title { font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 700; color: #fff; letter-spacing: 1px; flex: 1; }
+  .hist-backup-btn.import { background: var(--accent-dim); border: 1px solid var(--accent); color: var(--accent); }
+  .hist-backup-btn.import:active { background: rgba(91,157,249,0.22); }
+  .history-header { background: var(--surface); padding: 15px 16px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10; }
+  .history-back { background: none; border: none; color: var(--accent); font-size: 22px; cursor: pointer; padding: 2px 6px; }
+  .history-title { font-family: 'Space Grotesk', sans-serif; font-size: 19px; font-weight: 600; color: var(--text); letter-spacing: -0.3px; flex: 1; }
   .history-count { font-size: 11px; color: var(--muted); white-space: nowrap; }
   .history-empty { text-align: center; color: var(--faint); padding: 60px 20px; font-size: 14px; line-height: 2.2; }
 
   .shift-card { margin: 12px 12px 0; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; animation: fadeIn 0.2s ease; }
-  .shift-card-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--border); background: #1a1a1a; }
-  .shift-datetime { font-size: 13px; color: var(--orange); }
+  .shift-card-header { display: flex; justify-content: space-between; align-items: center; padding: 11px 14px; border-bottom: 1px solid var(--border); background: var(--surface2); }
+  .shift-datetime { font-size: 12px; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
   .shift-actions { display: flex; gap: 6px; align-items: center; }
-  .shift-copy-btn { background: none; border: 1px solid #2a2a2a; color: var(--muted); font-size: 11px; font-family: 'DM Mono', monospace; padding: 3px 8px; border-radius: 6px; cursor: pointer; }
+  .shift-copy-btn { background: none; border: 1px solid #2a2a2a; color: var(--muted); font-size: 11px; font-family: 'JetBrains Mono', monospace; padding: 3px 8px; border-radius: 6px; cursor: pointer; }
   .shift-copy-btn:active { color: var(--green); border-color: var(--green); }
   .shift-del { background: none; border: none; color: #3a3a3a; font-size: 20px; cursor: pointer; padding: 2px 4px; transition: color 0.15s; }
   .shift-del:active { color: #ff4444; }
   .shift-body { padding: 10px 14px; }
   .shift-row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #1a1a1a; }
   .shift-row-label { font-size: 12px; color: var(--muted); }
-  .shift-row-val { font-size: 13px; color: #ccc; }
+  .shift-row-val { font-size: 12px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
   .shift-total-row { display: flex; justify-content: space-between; padding: 8px 0 2px; }
-  .shift-total-label { font-family: 'Barlow Condensed', sans-serif; font-size: 15px; color: var(--orange); text-transform: uppercase; letter-spacing: 1px; }
-  .shift-total-val { font-size: 17px; color: var(--orange); }
+  .shift-total-label { font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 500; color: var(--muted); text-transform: none; letter-spacing: 0; }
+  .shift-total-val { font-size: 16px; color: var(--keep); font-family: 'JetBrains Mono', monospace; font-weight: 600; font-variant-numeric: tabular-nums; }
 
 
   /* ── Mini Calculator ── */
@@ -227,16 +233,12 @@
     text-transform: uppercase; margin-bottom: 2px;
   }
   .calc-expr {
-    font-family: 'DM Mono', monospace; font-size: 16px;
+    font-family: 'JetBrains Mono', monospace; font-size: 16px;
     color: var(--muted); min-height: 20px; text-align: right;
     white-space: pre-wrap; word-break: break-all; line-height: 1.5;
   }
-  .calc-result {
-    font-family: 'DM Mono', monospace; font-size: 34px;
-    color: #fff; text-align: right; line-height: 1.1;
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  }
-  .calc-result.has-val { color: var(--green); }
+  .calc-result { font-family: 'JetBrains Mono', monospace; font-size: 32px; color: var(--text); text-align: right; line-height: 1.1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .calc-result.has-val { color: var(--accent); }
 
   .calc-grid {
     display: grid; grid-template-columns: repeat(4, 1fr);
@@ -244,20 +246,20 @@
   }
   .calc-btn {
     border: none; border-radius: 12px; padding: 0;
-    height: 58px; font-family: 'DM Mono', monospace; font-size: 20px;
+    height: 58px; font-family: 'JetBrains Mono', monospace; font-size: 20px;
     cursor: pointer; transition: transform 0.08s, opacity 0.1s;
     -webkit-tap-highlight-color: transparent;
     display: flex; align-items: center; justify-content: center;
   }
   .calc-btn:active { transform: scale(0.91); opacity: 0.8; }
-  .calc-btn.num  { background: #1e1e1e; color: #fff; }
-  .calc-btn.op   { background: #2a2018; color: var(--orange); font-size: 22px; }
-  .calc-btn.clr  { background: #2a1818; color: #ff6b6b; font-size: 15px; font-family: 'Barlow Condensed', sans-serif; letter-spacing: 1px; }
-  .calc-btn.eq   { background: var(--orange); color: #fff; font-size: 24px; }
-  .calc-btn.use  {
+  .calc-btn.num { background: var(--surface2); color: var(--text); font-family: 'JetBrains Mono', monospace; }
+  .calc-btn.op { background: var(--surface2); color: var(--accent); font-size: 20px; }
+  .calc-btn.clr { background: var(--surface2); color: var(--owe); font-size: 15px; font-family: 'Space Grotesk', sans-serif; letter-spacing: 1px; }
+  .calc-btn.eq { background: var(--accent); color: #0B0D0F; font-size: 22px; font-weight: 600; }
+  .calc-btn.use {
     grid-column: span 4; height: 50px; margin-top: 2px;
-    background: var(--green); color: #fff;
-    font-family: 'Barlow Condensed', sans-serif; font-size: 17px; letter-spacing: 2px;
+    background: var(--accent); color: #0B0D0F;
+    font-family: 'Space Grotesk', sans-serif; font-size: 17px; letter-spacing: 0.3px;
     text-transform: uppercase; border-radius: 12px;
   }
   .calc-btn.use:disabled { background: #1e3a24; color: #3a6a44; cursor: default; transform: none; }
@@ -278,20 +280,11 @@
     padding: 32px;
   }
   .lock-icon { font-size: 48px; margin-bottom: 16px; }
-  .lock-title { font-family: 'Barlow Condensed', sans-serif; font-size: 26px; font-weight: 700; color: #fff; letter-spacing: 1px; margin-bottom: 4px; }
-  .lock-sub { font-size: 12px; color: var(--muted); margin-bottom: 32px; letter-spacing: 1px; }
-  .lock-input {
-    width: 100%; max-width: 300px; background: #0e0e0e; border: 1px solid #333;
-    border-radius: 10px; padding: 14px 16px; color: #fff;
-    font-family: 'DM Mono', monospace; font-size: 20px; outline: none;
-    text-align: center; letter-spacing: 4px; margin-bottom: 14px;
-    transition: border-color 0.2s;
-  }
-  .lock-input:focus { border-color: var(--orange); }
-  .lock-input.shake {
-    animation: shake 0.35s ease;
-    border-color: #ff4444;
-  }
+  .lock-title { font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 700; color: var(--text); letter-spacing: -0.5px; margin-bottom: 6px; }
+  .lock-sub { font-size: 12px; color: var(--muted); margin-bottom: 30px; letter-spacing: 0; text-transform: none; }
+  .lock-input { width: 100%; max-width: 300px; background: var(--surface); border: 1px solid var(--border); border-radius: 11px; padding: 15px 16px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 19px; outline: none; text-align: center; letter-spacing: 3px; margin-bottom: 14px; transition: border-color .2s; }
+  .lock-input:focus { border-color: var(--accent); }
+  .lock-input.shake { animation: shake 0.35s ease; border-color: var(--owe); }
   @keyframes shake {
     0%,100% { transform: translateX(0); }
     20% { transform: translateX(-8px); }
@@ -299,14 +292,9 @@
     60% { transform: translateX(-6px); }
     80% { transform: translateX(6px); }
   }
-  .lock-btn {
-    width: 100%; max-width: 300px; padding: 14px; border-radius: 10px;
-    border: none; background: var(--orange); color: #fff;
-    font-family: 'Barlow Condensed', sans-serif; font-size: 17px; letter-spacing: 2px;
-    text-transform: uppercase; cursor: pointer; transition: opacity 0.15s;
-  }
+  .lock-btn { width: 100%; max-width: 300px; padding: 15px; border-radius: 11px; border: none; background: var(--accent); color: #0B0D0F; font-family: 'Space Grotesk', sans-serif; font-size: 15px; font-weight: 600; letter-spacing: 0; text-transform: none; cursor: pointer; }
   .lock-btn:active { opacity: 0.8; }
-  .lock-error { color: #ff4444; font-size: 12px; margin-top: 10px; min-height: 16px; }
+  .lock-error { color: var(--owe); font-size: 12px; margin-top: 10px; min-height: 16px; }
 
   /* ── Scan panel ── */
   .scan-panel {
@@ -315,23 +303,19 @@
     overflow-y: auto; padding-bottom: 40px;
   }
   .scan-panel.open { transform: translateX(0); }
-  .scan-header {
-    background: linear-gradient(135deg, #1a5a7a 0%, #0d3a52 100%);
-    padding: 16px; display: flex; align-items: center; gap: 12px;
-    position: sticky; top: 0; z-index: 10; border-bottom: 1px solid #2a6a8a;
-  }
-  .scan-back { background: none; border: none; color: rgba(255,255,255,0.85); font-size: 24px; cursor: pointer; padding: 2px 6px; }
+  .scan-header { background: var(--surface); padding: 15px 16px; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 10; border-bottom: 1px solid var(--border); }
+  .scan-back { background: none; border: none; color: var(--accent); font-size: 22px; cursor: pointer; padding: 2px 6px; }
   .scan-htext { flex: 1; }
-  .scan-hsub { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; letter-spacing: 3px; color: rgba(255,255,255,0.6); text-transform: uppercase; }
-  .scan-htitle { font-family: 'Barlow Condensed', sans-serif; font-size: 24px; font-weight: 700; color: #fff; letter-spacing: 1px; }
+  .scan-hsub { font-size: 11px; color: var(--muted); letter-spacing: 0.3px; text-transform: none; }
+  .scan-htitle { font-family: 'Space Grotesk', sans-serif; font-size: 19px; font-weight: 600; color: var(--text); letter-spacing: -0.3px; }
   .scan-wrap { padding: 14px 12px; }
 
   .scan-cam-btn {
-    width: 100%; background: rgba(96,192,240,0.12); border: 1px solid #60c0f0; color: #60c0f0;
-    border-radius: 12px; padding: 16px; font-family: 'Barlow Condensed', sans-serif;
+    width: 100%; background: var(--accent-dim); border: 1px solid var(--accent); color: var(--accent);
+    border-radius: 12px; padding: 16px; font-family: 'Space Grotesk', sans-serif;
     font-size: 17px; letter-spacing: 1px; text-transform: uppercase; cursor: pointer;
   }
-  .scan-cam-btn:active { background: rgba(96,192,240,0.25); }
+  .scan-cam-btn:active { background: rgba(91,157,249,0.22); }
   .scan-cam-btn:disabled { opacity: 0.4; border-color: #333; color: #555; }
 
   .scan-offline {
@@ -342,8 +326,8 @@
   .scan-offline.show { display: block; }
 
   .scan-queue-head { display: flex; justify-content: space-between; align-items: center; margin: 20px 0 10px; }
-  .scan-queue-head h2 { font-family: 'Barlow Condensed', sans-serif; font-size: 14px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
-  .scan-queue-count { font-size: 13px; color: #60c0f0; }
+  .scan-queue-head h2 { font-family: 'Space Grotesk', sans-serif; font-size: 14px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+  .scan-queue-count { font-size: 13px; color: var(--accent); }
   .scan-empty { text-align: center; color: var(--faint); font-size: 13px; padding: 24px 0; line-height: 1.8; }
   .scan-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; }
   .scan-thumb { position: relative; aspect-ratio: 3/4; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); background: #000; }
@@ -352,14 +336,14 @@
   .scan-thumb-del { position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.7); color: #ff4444; border: none; width: 22px; height: 22px; border-radius: 6px; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; }
   .scan-thumb-status { position: absolute; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; }
   .scan-thumb.reading .scan-thumb-status, .scan-thumb.done .scan-thumb-status { display: flex; }
-  .scan-thumb-spin { width: 20px; height: 20px; border: 3px solid rgba(96,192,240,0.3); border-top-color: #60c0f0; border-radius: 50%; animation: scanspin 0.8s linear infinite; }
+  .scan-thumb-spin { width: 20px; height: 20px; border: 3px solid rgba(91,157,249,0.25); border-top-color: var(--accent); border-radius: 50%; animation: scanspin 0.8s linear infinite; }
   @keyframes scanspin { to { transform: rotate(360deg); } }
   .scan-thumb-tick { font-size: 22px; color: var(--green); }
   .scan-thumb-fail { font-size: 22px; color: var(--orange); }
 
   .scan-read-btn {
     width: 100%; margin-top: 14px; background: var(--green); border: 1px solid var(--green); color: #fff;
-    border-radius: 12px; padding: 15px; font-family: 'Barlow Condensed', sans-serif;
+    border-radius: 12px; padding: 15px; font-family: 'Space Grotesk', sans-serif;
     font-size: 17px; letter-spacing: 1px; text-transform: uppercase; cursor: pointer;
   }
   .scan-read-btn:active { opacity: 0.85; }
@@ -367,14 +351,14 @@
 
   .scan-progress { margin-top: 14px; display: none; }
   .scan-progress.show { display: block; }
-  .scan-progress-label { font-size: 13px; color: #60c0f0; margin-bottom: 8px; }
+  .scan-progress-label { font-size: 13px; color: var(--accent); margin-bottom: 8px; }
   .scan-progress-track { height: 8px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
-  .scan-progress-fill { height: 100%; background: #60c0f0; width: 0%; transition: width 0.3s; }
+  .scan-progress-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s; }
 
   .scan-review { margin-top: 22px; display: none; }
   .scan-review.show { display: block; }
   .scan-review-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
-  .scan-review-head h2 { font-family: 'Barlow Condensed', sans-serif; font-size: 18px; color: #fff; letter-spacing: 1px; }
+  .scan-review-head h2 { font-family: 'Space Grotesk', sans-serif; font-size: 18px; color: #fff; letter-spacing: 1px; }
   .scan-review-sum { font-size: 12px; color: var(--muted); }
   .scan-rev-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin-bottom: 10px; }
   .scan-rev-card.fail { border-color: rgba(255,107,53,0.5); }
@@ -387,35 +371,35 @@
   .scan-rev-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-top: 1px solid var(--border); }
   .scan-rev-label { font-size: 13px; color: var(--muted); }
   .scan-rev-field { display: flex; align-items: center; gap: 4px; }
-  .scan-rev-input { background: #0e0e0e; border: 1px solid #333; border-radius: 8px; padding: 7px 9px; color: #fff; font-family: 'DM Mono', monospace; font-size: 16px; width: 90px; text-align: right; -moz-appearance: textfield; appearance: textfield; }
+  .scan-rev-input { background: #0e0e0e; border: 1px solid #333; border-radius: 8px; padding: 7px 9px; color: #fff; font-family: 'JetBrains Mono', monospace; font-size: 16px; width: 90px; text-align: right; -moz-appearance: textfield; appearance: textfield; }
   .scan-rev-input::-webkit-outer-spin-button, .scan-rev-input::-webkit-inner-spin-button { -webkit-appearance: none; }
   .scan-rev-input.missing { border-color: var(--orange); }
-  .scan-rev-raw { display: none; margin-top: 10px; background: #0a0a0a; border: 1px solid var(--border); border-radius: 8px; padding: 10px; font-family: 'DM Mono', monospace; font-size: 12px; color: #a8e6b0; white-space: pre-wrap; word-break: break-word; line-height: 1.6; max-height: 180px; overflow-y: auto; }
+  .scan-rev-raw { display: none; margin-top: 10px; background: #0a0a0a; border: 1px solid var(--border); border-radius: 8px; padding: 10px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #a8e6b0; white-space: pre-wrap; word-break: break-word; line-height: 1.6; max-height: 180px; overflow-y: auto; }
   .scan-rev-raw.show { display: block; }
   .scan-rev-tagrow { display: flex; align-items: center; gap: 6px; padding: 8px 0 2px; font-size: 13px; }
   /* cash / card toggle */
   .scan-pay-toggle { display: flex; gap: 6px; padding: 4px 0 2px; }
   .scan-pay-btn {
     flex: 1; background: #0e0e0e; border: 1px solid #333; color: var(--muted);
-    border-radius: 8px; padding: 8px; font-family: 'Barlow Condensed', sans-serif;
+    border-radius: 8px; padding: 8px; font-family: 'Space Grotesk', sans-serif;
     font-size: 14px; letter-spacing: 1px; cursor: pointer; transition: all 0.15s;
   }
   .scan-pay-btn.active { background: var(--green-dim); border-color: var(--green); color: var(--green); }
-  .scan-pay-btn.active.card { background: rgba(96,192,240,0.15); border-color: #60c0f0; color: #60c0f0; }
-  .scan-rev-card.card { border-color: rgba(96,192,240,0.4); }
+  .scan-pay-btn.active.card { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+  .scan-rev-card.card { border-color: var(--accent-line); }
   /* excluded (card) TOTAL row */
   .scan-rev-row.excluded { opacity: 0.45; }
   .scan-rev-row.excluded .scan-rev-input { border-color: #2a2a2a; color: var(--faint); }
-  .scan-excl-note { display: block; font-size: 10px; color: #60c0f0; margin-top: 2px; letter-spacing: 0.5px; }
-  .scan-rev-tag { flex: 1; background: #0e0e0e; border: 1px solid #333; border-radius: 8px; padding: 7px 10px; color: #ccc; font-family: 'Barlow Condensed', sans-serif; font-size: 14px; letter-spacing: 0.5px; outline: none; }
-  .scan-rev-tag:focus { border-color: #60c0f0; }
+  .scan-excl-note { display: block; font-size: 10px; color: var(--accent); margin-top: 2px; letter-spacing: 0.5px; }
+  .scan-rev-tag { flex: 1; background: #0e0e0e; border: 1px solid #333; border-radius: 8px; padding: 7px 10px; color: #ccc; font-family: 'Space Grotesk', sans-serif; font-size: 14px; letter-spacing: 0.5px; outline: none; }
+  .scan-rev-tag:focus { border-color: var(--accent); }
   .scan-rev-tag::placeholder { color: var(--faint); }
   .scan-add-btn {
-    width: 100%; margin-top: 6px; background: rgba(96,192,240,0.15); border: 1px solid #60c0f0; color: #60c0f0;
-    border-radius: 12px; padding: 15px; font-family: 'Barlow Condensed', sans-serif;
+    width: 100%; margin-top: 6px; background: var(--accent-dim); border: 1px solid var(--accent); color: var(--accent);
+    border-radius: 12px; padding: 15px; font-family: 'Space Grotesk', sans-serif;
     font-size: 17px; letter-spacing: 1px; text-transform: uppercase; cursor: pointer;
   }
-  .scan-add-btn:active { background: rgba(96,192,240,0.3); }
+  .scan-add-btn:active { background: rgba(91,157,249,0.25); }
   .scan-note { margin-top: 14px; font-size: 11px; color: var(--faint); text-align: center; line-height: 1.8; }
 
   /* ── Live camera ── */
@@ -430,7 +414,7 @@
     padding: 14px 16px; background: linear-gradient(to bottom, rgba(0,0,0,0.6), transparent);
   }
   .livecam-close { background: rgba(0,0,0,0.5); border: none; color: #fff; width: 38px; height: 38px; border-radius: 50%; font-size: 20px; cursor: pointer; }
-  .livecam-count { color: #fff; font-family: 'Barlow Condensed', sans-serif; font-size: 15px; letter-spacing: 1px; background: rgba(0,0,0,0.5); padding: 7px 14px; border-radius: 16px; }
+  .livecam-count { color: #fff; font-family: 'Space Grotesk', sans-serif; font-size: 15px; letter-spacing: 1px; background: rgba(0,0,0,0.5); padding: 7px 14px; border-radius: 16px; }
   /* framing guide */
   .livecam-guide {
     position: absolute; top: 14%; left: 8%; right: 8%; bottom: 30%;
@@ -463,7 +447,7 @@
   .livecam-shutter:disabled { background: #666; }
   .livecam-done {
     background: var(--green); border: none; color: #fff; border-radius: 20px; padding: 11px 20px;
-    font-family: 'Barlow Condensed', sans-serif; font-size: 15px; letter-spacing: 1px;
+    font-family: 'Space Grotesk', sans-serif; font-size: 15px; letter-spacing: 1px;
     text-transform: uppercase; cursor: pointer; flex: 1; max-width: 90px;
   }
   .livecam-done:active { opacity: 0.85; }
@@ -474,42 +458,54 @@
 
 <!-- ── Lock screen ── -->
 <div class="lock-screen" id="lockScreen">
-  <div class="lock-icon">🔐</div>
-  <div class="lock-title">Driver Wage Calc</div>
-  <div class="lock-sub">ENTER PASSWORD TO CONTINUE</div>
+  <div class="lock-icon"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg></div>
+  <div class="lock-title">Float</div>
+  <div class="lock-sub">Enter your password to continue</div>
   <input class="lock-input" type="password" id="lockInput" placeholder="••••••••"
     onkeydown="if(event.key==='Enter') checkPassword()">
   <button class="lock-btn" onclick="checkPassword()">Unlock</button>
   <div class="lock-error" id="lockError"></div>
 </div>
 
-<div class="saved-dot" id="savedDot">● SAVED</div>
+<div class="saved-dot" id="savedDot">Saved</div>
 <div class="copy-toast" id="copyToast"></div>
 
 <!-- ═══════════════════════════════ MAIN ═══════════════════════════════ -->
 <div id="mainView">
   <div class="header">
-    <div>
-      <div class="header-brand">Bankhead Chinese</div>
-      <div class="header-sub">Delivery Driver</div>
-      <div class="header-title">Wage Calculator</div>
+    <div class="header-mark">
+      <div class="header-glyph">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5h5M9.5 13h5"/>
+        </svg>
+      </div>
+      <div>
+        <div class="header-title">Float</div>
+        <div class="header-sub">Shift earnings</div>
+      </div>
     </div>
     <div class="header-btns">
-      <button class="header-hist-btn" onclick="openScan()" style="background:rgba(96,192,240,0.4);border-color:rgba(96,192,240,0.5)">📷 Scan</button>
-      <button class="header-hist-btn" onclick="openHistory()">📋 History</button>
+      <button class="header-hist-btn" onclick="openScan()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/></svg>
+        Scan
+      </button>
+      <button class="header-hist-btn" onclick="openHistory()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></svg>
+        History
+      </button>
     </div>
   </div>
 
   <div class="wrap">
 
     <!-- NOTES -->
-    <div class="section open" id="sec-notes" style="--accent:#ff6b35">
+    <div class="section open" id="sec-notes">
       <button class="section-header" onclick="toggleSection('sec-notes')">
-        <span class="section-label">💷 Notes</span>
+        <span class="section-label"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01M18 12h.01"/></svg> Notes</span>
         <div class="section-right"><span class="section-total" id="notes-total">£0.00</span><span class="chevron">▼</span></div>
       </button>
       <div class="section-body">
-        <div class="input-label">Cash notes total</div>
+        <div class="input-label">Notes</div>
         <div class="input-wrap">
           <span class="input-prefix">£</span>
           <input class="num-input" type="number" inputmode="decimal" id="notes-base" placeholder="0.00" oninput="recalc()">
@@ -517,7 +513,7 @@
         <div class="entries-list" id="notes-entries"></div>
         <div class="add-row">
           <button class="btn-add" onclick="showInlineAdd('notes')">+ Add</button>
-          <button class="btn-calc-open" onclick="openCalc('notes')" title="Calculator">🧮</button>
+          <button class="btn-calc-open" onclick="openCalc('notes')" title="Calculator"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2.5" width="16" height="19" rx="2"/><path d="M8 7h8M8 12h.01M12 12h.01M16 12h.01M8 16.5h.01M12 16.5h.01M16 16.5h.01"/></svg></button>
           <div class="inline-add-wrap" id="notes-inline">
             <span class="add-prefix">£</span>
             <input class="add-input" type="number" inputmode="decimal" id="notes-add-input" placeholder="0.00" onkeydown="if(event.key==='Enter') confirmAdd('notes')">
@@ -526,20 +522,20 @@
           </div>
         </div>
         <div class="combined-pill" id="notes-pill" style="display:none">
-          <span class="combined-label">TOTAL NOTES</span>
+          <span class="combined-label">Total notes</span>
           <span class="combined-val" id="notes-combined">£0.00</span>
         </div>
       </div>
     </div>
 
     <!-- COINS -->
-    <div class="section open" id="sec-coins" style="--accent:#f0c040">
+    <div class="section open" id="sec-coins">
       <button class="section-header" onclick="toggleSection('sec-coins')">
-        <span class="section-label">🪙 Coins</span>
+        <span class="section-label"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="6"/><path d="M15.5 5.2A6 6 0 0 1 15 21a6 6 0 0 1-4.2-1.7"/></svg> Coins</span>
         <div class="section-right"><span class="section-total" id="coins-total">£0.00</span><span class="chevron">▼</span></div>
       </button>
       <div class="section-body">
-        <div class="input-label">Cash coins total</div>
+        <div class="input-label">Coins</div>
         <div class="input-wrap">
           <span class="input-prefix">£</span>
           <input class="num-input" type="number" inputmode="decimal" id="coins-base" placeholder="0.00" oninput="recalc()">
@@ -547,7 +543,7 @@
         <div class="entries-list" id="coins-entries"></div>
         <div class="add-row">
           <button class="btn-add" onclick="showInlineAdd('coins')">+ Add</button>
-          <button class="btn-calc-open" onclick="openCalc('coins')" title="Calculator">🧮</button>
+          <button class="btn-calc-open" onclick="openCalc('coins')" title="Calculator"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2.5" width="16" height="19" rx="2"/><path d="M8 7h8M8 12h.01M12 12h.01M16 12h.01M8 16.5h.01M12 16.5h.01M16 16.5h.01"/></svg></button>
           <div class="inline-add-wrap" id="coins-inline">
             <span class="add-prefix">£</span>
             <input class="add-input" type="number" inputmode="decimal" id="coins-add-input" placeholder="0.00" onkeydown="if(event.key==='Enter') confirmAdd('coins')">
@@ -556,7 +552,7 @@
           </div>
         </div>
         <div class="combined-pill" id="coins-pill" style="display:none">
-          <span class="combined-label">TOTAL COINS</span>
+          <span class="combined-label">Total coins</span>
           <span class="combined-val" id="coins-combined">£0.00</span>
         </div>
       </div>
@@ -564,18 +560,18 @@
 
     <!-- CASH HELD -->
     <div class="cash-held-banner">
-      <span class="cash-held-label">Total Cash Held</span>
+      <span class="cash-held-label">Total cash held</span>
       <span class="section-total" id="cash-held-val">£0.00</span>
     </div>
 
     <!-- CASH ORDERS -->
-    <div class="section open" id="sec-orders" style="--accent:#60c0f0">
+    <div class="section open" id="sec-orders">
       <button class="section-header" onclick="toggleSection('sec-orders')">
-        <span class="section-label">🧾 Cash Orders</span>
+        <span class="section-label"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v18l2.5-1.6L10 21l2-1.6L14 21l2.5-1.6L19 21V3z"/><path d="M9 8h6M9 12h6"/></svg> Cash orders</span>
         <div class="section-right"><span class="section-total" id="orders-total">£0.00</span><span class="chevron">▼</span></div>
       </button>
       <div class="section-body">
-        <div class="input-label">Sum of cash orders</div>
+        <div class="input-label">Cash orders</div>
         <div class="input-wrap">
           <span class="input-prefix">£</span>
           <input class="num-input" type="number" inputmode="decimal" id="orders-base" placeholder="0.00" oninput="recalc()">
@@ -583,17 +579,17 @@
         <div class="entries-list" id="orders-entries"></div>
         <div class="add-row">
           <button class="btn-add" onclick="showInlineAdd('orders')">+ Add</button>
-          <button class="btn-calc-open" onclick="openCalc('orders')" title="Calculator">🧮</button>
+          <button class="btn-calc-open" onclick="openCalc('orders')" title="Calculator"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2.5" width="16" height="19" rx="2"/><path d="M8 7h8M8 12h.01M12 12h.01M16 12h.01M8 16.5h.01M12 16.5h.01M16 16.5h.01"/></svg></button>
           <div class="inline-add-wrap" id="orders-inline">
             <span class="add-prefix">£</span>
             <input class="add-input" type="number" inputmode="decimal" id="orders-add-input" placeholder="0.00" onkeydown="if(event.key==='Enter') confirmAdd('orders')">
             <button class="btn-confirm" onclick="confirmAdd('orders')">✓</button>
             <button class="btn-cancel"  onclick="hideInlineAdd('orders')">✕</button>
-            <input class="add-tag-input" type="text" id="orders-add-tag" placeholder="Label (optional) — e.g. address" onkeydown="if(event.key==='Enter') confirmAdd('orders')">
+            <input class="add-tag-input" type="text" id="orders-add-tag" placeholder="Label (optional)" onkeydown="if(event.key==='Enter') confirmAdd('orders')">
           </div>
         </div>
         <div class="combined-pill" id="orders-pill" style="display:none">
-          <span class="combined-label">COMBINED ORDERS</span>
+          <span class="combined-label">Combined orders</span>
           <span class="combined-val" id="orders-combined">£0.00</span>
         </div>
       </div>
@@ -602,20 +598,20 @@
     <!-- TIPS -->
     <div class="tips-banner" id="tips-banner">
       <div>
-        <div class="tips-title">💰 Tips</div>
-        <div class="tips-sub">Cash Held − Cash Orders</div>
+        <div class="tips-title"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5.5c0-1.9-2.2-3-5-3s-5 1.1-5 3 2.2 2.7 5 3.2 5 1.3 5 3.3-2.2 3-5 3-5-1.1-5-3"/></svg> Tips</div>
+        <div class="tips-sub">Cash held − cash orders</div>
       </div>
       <span class="tips-val" id="tips-val">£0.00</span>
     </div>
 
     <!-- DELIVERY -->
-    <div class="section open" id="sec-delivery" style="--accent:#c084fc">
+    <div class="section open" id="sec-delivery">
       <button class="section-header" onclick="toggleSection('sec-delivery')">
-        <span class="section-label">🚗 Delivery Charges</span>
+        <span class="section-label"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17h14M6.5 17V9.5l1.7-3.2a2 2 0 0 1 1.8-1.1h4a2 2 0 0 1 1.8 1.1L17.5 9.5V17"/><path d="M6.5 10h11"/><circle cx="8" cy="17" r="1.6"/><circle cx="16" cy="17" r="1.6"/></svg> Delivery charges</span>
         <div class="section-right"><span class="section-total" id="delivery-total">£0.00</span><span class="chevron">▼</span></div>
       </button>
       <div class="section-body">
-        <div class="input-label">Total delivery charges</div>
+        <div class="input-label">Delivery charges</div>
         <div class="input-wrap">
           <span class="input-prefix">£</span>
           <input class="num-input" type="number" inputmode="decimal" id="delivery-base" placeholder="0.00" oninput="recalc()">
@@ -623,30 +619,30 @@
         <div class="entries-list" id="delivery-entries"></div>
         <div class="add-row">
           <button class="btn-add" onclick="showInlineAdd('delivery')">+ Add</button>
-          <button class="btn-calc-open" onclick="openCalc('delivery')" title="Calculator">🧮</button>
+          <button class="btn-calc-open" onclick="openCalc('delivery')" title="Calculator"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2.5" width="16" height="19" rx="2"/><path d="M8 7h8M8 12h.01M12 12h.01M16 12h.01M8 16.5h.01M12 16.5h.01M16 16.5h.01"/></svg></button>
           <div class="inline-add-wrap" id="delivery-inline">
             <span class="add-prefix">£</span>
             <input class="add-input" type="number" inputmode="decimal" id="delivery-add-input" placeholder="0.00" onkeydown="if(event.key==='Enter') confirmAdd('delivery')">
             <button class="btn-confirm" onclick="confirmAdd('delivery')">✓</button>
             <button class="btn-cancel"  onclick="hideInlineAdd('delivery')">✕</button>
-            <input class="add-tag-input" type="text" id="delivery-add-tag" placeholder="Label (optional) — e.g. address" onkeydown="if(event.key==='Enter') confirmAdd('delivery')">
+            <input class="add-tag-input" type="text" id="delivery-add-tag" placeholder="Label (optional)" onkeydown="if(event.key==='Enter') confirmAdd('delivery')">
           </div>
         </div>
         <div class="combined-pill" id="delivery-pill" style="display:none">
-          <span class="combined-label">COMBINED DELIVERY</span>
+          <span class="combined-label">Combined delivery</span>
           <span class="combined-val" id="delivery-combined">£0.00</span>
         </div>
       </div>
     </div>
 
     <!-- WAGE -->
-    <div class="section open" id="sec-wage" style="--accent:#fb923c">
+    <div class="section open" id="sec-wage">
       <button class="section-header" onclick="toggleSection('sec-wage')">
-        <span class="section-label">⏱ Wage</span>
+        <span class="section-label"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg> Wage</span>
         <div class="section-right"><span class="section-total" id="wage-total">£0.00</span><span class="chevron">▼</span></div>
       </button>
       <div class="section-body">
-        <div class="input-label">Enter shift wage (e.g. 3 hrs × £30 = 90)</div>
+        <div class="input-label">Shift wage</div>
         <div class="input-wrap">
           <span class="input-prefix">£</span>
           <input class="num-input" type="number" inputmode="decimal" id="wage" placeholder="0.00" oninput="recalc()">
@@ -658,32 +654,32 @@
     <div class="summary-card">
       <div class="summary-heading">Summary</div>
       <div class="summary-row">
-        <span class="summary-row-label" style="color:#4caf50">Tips</span>
-        <span class="summary-row-val"   style="color:#4caf50" id="sum-tips">£0.00</span>
+        <span class="summary-row-label" style="color:var(--muted)">Tips</span>
+        <span class="summary-row-val"   style="color:var(--keep)" id="sum-tips">£0.00</span>
       </div>
       <div class="summary-row">
-        <span class="summary-row-label" style="color:#c084fc">Delivery Charges</span>
-        <span class="summary-row-val"   style="color:#c084fc" id="sum-delivery">£0.00</span>
+        <span class="summary-row-label" style="color:var(--muted)">Delivery charges</span>
+        <span class="summary-row-val"   id="sum-delivery">£0.00</span>
       </div>
       <div class="summary-row">
-        <span class="summary-row-label" style="color:#fb923c">Wage</span>
-        <span class="summary-row-val"   style="color:#fb923c" id="sum-wage">£0.00</span>
+        <span class="summary-row-label" style="color:var(--muted)">Wage</span>
+        <span class="summary-row-val"   id="sum-wage">£0.00</span>
       </div>
       <div class="summary-total-row">
-        <span class="summary-total-label">Total Earnings</span>
+        <span class="summary-total-label">Total earnings</span>
         <span class="summary-total-val" id="sum-total">£0.00</span>
       </div>
-      <div id="cash-back-row" style="display:none;justify-content:space-between;align-items:center;padding:10px 0 2px;border-top:1px dashed #3a1a1a;margin-top:6px">
+      <div id="cash-back-row" style="display:none;justify-content:space-between;align-items:center;padding:10px 0 2px;border-top:1px solid var(--border);margin-top:6px">
         <div>
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:15px;text-transform:uppercase;letter-spacing:1px;color:#ff6b6b">💸 Cash to Return to Boss</div>
+          <div style="font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:500;color:var(--owe)">Cash to return</div>
           <div style="font-size:10px;color:#444;margin-top:1px">Cash Held − Total Earnings</div>
         </div>
-        <span style="font-family:'DM Mono',monospace;font-size:20px;color:#ff6b6b" id="sum-cash-back">£0.00</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:19px;font-variant-numeric:tabular-nums;color:var(--owe)" id="sum-cash-back">£0.00</span>
       </div>
     </div>
 
     <div class="btn-row" style="margin-bottom:12px">
-      <button class="export-btn" onclick="exportShift()">💾 Save Shift</button>
+      <button class="export-btn" onclick="exportShift()"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h11l3 3v15H5z"/><path d="M8 3v5h7"/><rect x="8" y="13" width="8" height="6"/></svg> Save shift</button>
       <button class="reset-btn"  onclick="resetAll()">Reset</button>
     </div>
 
@@ -695,13 +691,13 @@
 <div class="history-panel" id="historyPanel">
   <div class="history-header">
     <button class="history-back" onclick="closeHistory()">←</button>
-    <span class="history-title">Shift History</span>
+    <span class="history-title">Shift history</span>
     <span class="history-count" id="historyCount"></span>
   </div>
   <div id="historyList"></div>
   <div class="hist-backup-bar" id="histBackupBar">
-    <button class="hist-backup-btn export" onclick="exportBackup()">⬆ Export Backup</button>
-    <button class="hist-backup-btn import" onclick="document.getElementById('importFile').click()">⬇ Import Backup</button>
+    <button class="hist-backup-btn export" onclick="exportBackup()"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M6 11l6-6 6 6"/></svg> Export backup</button>
+    <button class="hist-backup-btn import" onclick="document.getElementById('importFile').click()"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M18 13l-6 6-6-6"/></svg> Import backup</button>
     <input type="file" accept="application/json,.json" id="importFile" style="display:none" onchange="handleImportFile(event)">
   </div>
 </div>
@@ -711,24 +707,24 @@
   <div class="scan-header">
     <button class="scan-back" onclick="closeScan()">←</button>
     <div class="scan-htext">
-      <div class="scan-hsub">Ticket Scanner</div>
-      <div class="scan-htitle">Scan Tickets</div>
+      <div class="scan-hsub">Tickets</div>
+      <div class="scan-htitle">Scan tickets</div>
     </div>
   </div>
   <div class="scan-wrap">
-    <button class="scan-cam-btn live" id="scanLiveBtn" onclick="openLiveCam()">🎥 Live Camera — Rapid Scan</button>
-    <button class="scan-cam-btn" id="scanCamBtn" onclick="document.getElementById('scanFile').click()">📸 Add Ticket Photo</button>
+    <button class="scan-cam-btn live" id="scanLiveBtn" onclick="openLiveCam()"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6.5" width="13" height="11" rx="2"/><path d="M15 11l6-3.5v9L15 13z"/></svg> Live camera</button>
+    <button class="scan-cam-btn" id="scanCamBtn" onclick="document.getElementById('scanFile').click()"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5A2 2 0 0 1 5 6.5h2l1.4-2h7.2L17 6.5h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.4"/></svg> Add photo</button>
     <input type="file" accept="image/*" capture="environment" id="scanFile" style="display:none" onchange="handleScanCapture(event)">
     <div class="scan-offline" id="scanOffline">You're offline — scanning needs internet to load the reader.<br>Enter values manually with + Add, or reconnect and try again.</div>
 
     <div class="scan-queue-head">
-      <h2>Photos to read</h2>
+      <h2>To read</h2>
       <span class="scan-queue-count" id="scanQueueCount">0</span>
     </div>
     <div class="scan-empty" id="scanEmpty">No photos yet.<br>Tap “Add Ticket Photo” and build up your stack.</div>
     <div class="scan-grid" id="scanGrid"></div>
 
-    <button class="scan-read-btn" id="scanReadBtn" onclick="scanReadAll()" disabled>Read all tickets</button>
+    <button class="scan-read-btn" id="scanReadBtn" onclick="scanReadAll()" disabled>Read all</button>
 
     <div class="scan-progress" id="scanProgress">
       <div class="scan-progress-label" id="scanProgressLabel">Reading 0 of 0…</div>
@@ -741,7 +737,7 @@
         <span class="scan-review-sum" id="scanReviewSum"></span>
       </div>
       <div id="scanReviewList"></div>
-      <button class="scan-add-btn" onclick="scanAddAll()">✓ Add all to calculator</button>
+      <button class="scan-add-btn" onclick="scanAddAll()">Add all</button>
       <div class="scan-note">
         TOTAL adds to Cash Orders · Delivery Charge adds to Delivery.<br>
         Green = read · Orange = check it. Tap “raw” to see what was read.
@@ -1021,7 +1017,7 @@ function renderHistory() {
   if (exportBtn) exportBtn.style.display = history.length === 0 ? 'none' : 'block';
 
   if (history.length === 0) {
-    list.innerHTML = '<div class="history-empty">No shifts saved yet.<br>Tap <strong style="color:var(--green)">💾 Save Shift</strong><br>after completing a calculation.</div>';
+    list.innerHTML = '<div class="history-empty">No shifts saved yet.<br>Tap <strong style="color:var(--green)"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h11l3 3v15H5z"/><path d="M8 3v5h7"/><rect x="8" y="13" width="8" height="6"/></svg> Save shift</strong><br>after completing a calculation.</div>';
     return;
   }
 
@@ -1032,7 +1028,7 @@ function renderHistory() {
       <div class="shift-card-header">
         <span class="shift-datetime">${fmtDateTime(s.ts)}</span>
         <div class="shift-actions">
-          <button class="shift-copy-btn" onclick="loadShift(${i})" style="color:#60c0f0;border-color:#1e3a4a">load</button>
+          <button class="shift-copy-btn" onclick="loadShift(${i})" style="color:var(--accent);border-color:#1e3a4a">load</button>
           <button class="shift-copy-btn" onclick="copyShift(${i})">copy</button>
           <button class="shift-del" onclick="deleteShift(${i})">×</button>
         </div>
@@ -1040,7 +1036,7 @@ function renderHistory() {
       <div class="shift-body">
         <div class="shift-row"><span class="shift-row-label">Cash Held</span><span class="shift-row-val">${fmt(s.cashHeld)}</span></div>
         <div class="shift-row"><span class="shift-row-label">Cash Orders</span><span class="shift-row-val">${fmt(s.orders)}</span></div>
-        <div class="shift-row"><span class="shift-row-label">Tips</span><span class="shift-row-val" style="color:var(--green)">${fmt(s.tips)}</span></div>
+        <div class="shift-row"><span class="shift-row-label">Tips</span><span class="shift-row-val" style="color:var(--keep)">${fmt(s.tips)}</span></div>
         <div class="shift-row"><span class="shift-row-label">Delivery</span><span class="shift-row-val">${fmt(s.delivery)}</span></div>
         <div class="shift-row" style="border:none"><span class="shift-row-label">Wage</span><span class="shift-row-val">${fmt(s.wage)}</span></div>
         ${s.finalOrder ? `<div class="shift-row" style="border:none"><span class="shift-row-label" style="color:#a78bfa">+ Final Order</span><span class="shift-row-val" style="color:#a78bfa">${fmt(s.finalOrder.extra)}</span></div>` : ''}
@@ -1269,8 +1265,8 @@ async function openLiveCam() {
   } catch (e) {
     err.innerHTML = 'Could not open the camera.<br><br>' +
       (e && e.name === 'NotAllowedError'
-        ? 'Camera permission was denied. Allow camera access in your browser settings, or use “📸 Add Ticket Photo” instead.'
-        : 'Your device or browser may not support this. Use “📸 Add Ticket Photo” instead.');
+        ? 'Camera permission was denied. Allow camera access in your browser settings, or use “<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5A2 2 0 0 1 5 6.5h2l1.4-2h7.2L17 6.5h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.4"/></svg> Add photo” instead.'
+        : 'Your device or browser may not support this. Use “<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5A2 2 0 0 1 5 6.5h2l1.4-2h7.2L17 6.5h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.4"/></svg> Add photo” instead.');
     err.classList.add('show');
     return;
   }
@@ -1554,14 +1550,14 @@ function scanShowReview() {
         '<button class="scan-rev-raw-btn" onclick="scanToggleRaw(' + t.id + ')">raw</button>' +
         '<button class="scan-rev-del-btn" onclick="scanRemoveReviewed(' + t.id + ')" title="Remove ticket">✕</button></div>' +
       '<div class="scan-pay-toggle">' +
-        '<button class="scan-pay-btn' + (!isCard ? ' active' : '') + '" onclick="scanSetPay(' + t.id + ',\'cash\')">💷 Cash</button>' +
-        '<button class="scan-pay-btn' + (isCard ? ' active card' : '') + '" onclick="scanSetPay(' + t.id + ',\'card\')">💳 Card</button>' +
+        '<button class="scan-pay-btn' + (!isCard ? ' active' : '') + '" onclick="scanSetPay(' + t.id + ',\'cash\')"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg> Cash</button>' +
+        '<button class="scan-pay-btn' + (isCard ? ' active card' : '') + '" onclick="scanSetPay(' + t.id + ',\'card\')"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 9.5h19"/></svg> Card</button>' +
       '</div>' +
-      '<div class="scan-rev-tagrow">🏷 <input class="scan-rev-tag" type="text" data-scan-tag="' + t.id + '" value="' + scanEscape(t.tag || '') + '" placeholder="Label (address)"></div>' +
-      '<div class="scan-rev-row' + (isCard ? ' excluded' : '') + '"><span class="scan-rev-label">🧾 TOTAL → Cash Orders' +
+      '<div class="scan-rev-tagrow"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5V4a1 1 0 0 1 1-1h7.5L21 12.5 12.5 21z"/><circle cx="7.5" cy="7.5" r="1.3"/></svg> <input class="scan-rev-tag" type="text" data-scan-tag="' + t.id + '" value="' + scanEscape(t.tag || '') + '" placeholder="Label (address)"></div>' +
+      '<div class="scan-rev-row' + (isCard ? ' excluded' : '') + '"><span class="scan-rev-label"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v18l2.5-1.6L10 21l2-1.6L14 21l2.5-1.6L19 21V3z"/><path d="M9 8h6M9 12h6"/></svg> Total → Cash orders' +
         (isCard ? '<span class="scan-excl-note">excluded — paid by card</span>' : '') + '</span>' +
         '<div class="scan-rev-field">£ <input class="scan-rev-input' + (t.order==null && !isCard ?' missing':'') + '" type="number" inputmode="decimal" data-scan-order="' + t.id + '" value="' + oVal + '" placeholder="—"' + (isCard ? ' disabled' : '') + '></div></div>' +
-      '<div class="scan-rev-row"><span class="scan-rev-label">🚗 Delivery Charge</span>' +
+      '<div class="scan-rev-row"><span class="scan-rev-label"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17h14M6.5 17V9.5l1.7-3.2a2 2 0 0 1 1.8-1.1h4a2 2 0 0 1 1.8 1.1L17.5 9.5V17"/><path d="M6.5 10h11"/><circle cx="8" cy="17" r="1.6"/><circle cx="16" cy="17" r="1.6"/></svg> Delivery charge</span>' +
         '<div class="scan-rev-field">£ <input class="scan-rev-input' + (t.deliv==null?' missing':'') + '" type="number" inputmode="decimal" data-scan-deliv="' + t.id + '" value="' + dVal + '" placeholder="—"></div></div>' +
       '<div class="scan-rev-raw" id="scanRaw-' + t.id + '">' + scanEscape(t.raw.trim() || '(nothing read)') + '</div>';
     list.appendChild(card);
@@ -1882,7 +1878,7 @@ requestWakeLock();
     <button class="calc-btn num"  onclick="calcAction('digit','.')">.</button>
     <button class="calc-btn eq"   onclick="calcAction('equals')">=</button>
 
-    <button class="calc-btn use"  id="calcUseBtn" onclick="calcUse()" disabled>→ Add to Field</button>
+    <button class="calc-btn use"  id="calcUseBtn" onclick="calcUse()" disabled>Add to field</button>
   </div>
 </div>
 
