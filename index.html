@@ -778,6 +778,10 @@ const MAX_HISTORY = 30;
 const STORE_KEY   = 'drivercalc2';
 const HIST_KEY    = 'drivercalc2_history';
 
+// Wake-lock state — declared here (before bootAuth → init → startWakeLock runs)
+let wakeLock = null;
+let wakeWanted = false;   // do we currently want the screen kept awake?
+
 // ── State ────────────────────────────────────────────────────
 let state = {
   notes:    { base: '', entries: [] },
@@ -1203,7 +1207,7 @@ function applyState() {
   recalc();
 }
 
-function init() { load(); applyState(); }
+function init() { load(); applyState(); startWakeLock(); }
 
 
 // ── Ticket Scanner (Tesseract) ───────────────────────────────
@@ -1824,23 +1828,48 @@ if ('serviceWorker' in navigator) {
 }
 
 // ── Wake Lock ─────────────────────────────────────────────────
-let wakeLock = null;
+// The screen wake lock is fragile: it can be rejected if the page isn't
+// visible when requested, and the system can release it at any time. So we
+// don't "ask once and hope" — we request when the app is active, listen for
+// the release event to re-acquire, and retry on visibility + user interaction.
+// (wakeLock / wakeWanted are declared at the top of the script so they're
+//  initialized before init() can call startWakeLock().)
 
-async function requestWakeLock() {
+async function acquireWakeLock() {
   if (!('wakeLock' in navigator)) return;
+  if (document.visibilityState !== 'visible') return;   // can't acquire while hidden
+  if (wakeLock) return;                                   // already held
   try {
     wakeLock = await navigator.wakeLock.request('screen');
-  } catch(e) {}
+    wakeLock.addEventListener('release', () => {
+      wakeLock = null;
+      // system dropped it — grab it again if we still want it and we're visible
+      if (wakeWanted && document.visibilityState === 'visible') acquireWakeLock();
+    });
+  } catch (e) {
+    wakeLock = null;   // rejected (often: page not focused) — a later trigger will retry
+  }
 }
 
-// Re-acquire if tab becomes visible again (required by the API)
+function startWakeLock() { wakeWanted = true; acquireWakeLock(); }
+
+// Re-acquire when the app comes back to the foreground (also release camera when it leaves)
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') requestWakeLock();
-  // release the camera if the app goes to the background
-  else if (liveStream) closeLiveCam();
+  if (document.visibilityState === 'visible') {
+    if (wakeWanted) acquireWakeLock();
+  } else if (liveStream) {
+    closeLiveCam();
+  }
 });
 
-requestWakeLock();
+// Backstop: the first request can be rejected if the page isn't focused yet,
+// so retry on the first real user interactions after unlock.
+['click', 'touchstart'].forEach(evt =>
+  document.addEventListener(evt, () => { if (wakeWanted) acquireWakeLock(); }, { passive: true })
+);
+
+// Legacy name kept in case anything else calls it
+function requestWakeLock() { startWakeLock(); }
 
 </script>
 
