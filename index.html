@@ -403,8 +403,8 @@
   .scan-note { margin-top: 14px; font-size: 11px; color: var(--faint); text-align: center; line-height: 1.8; }
 
   /* ── Live camera ── */
-  .scan-cam-btn.live { background: rgba(76,175,80,0.15); border-color: var(--green); color: var(--green); margin-bottom: 10px; }
-  .scan-cam-btn.live:active { background: rgba(76,175,80,0.3); }
+  .scan-cam-btn.live { background: var(--accent); border-color: var(--accent); color: #0B0D0F; font-weight: 600; margin-bottom: 10px; }
+  .scan-cam-btn.live:active { opacity: .85; }
   .livecam { position: fixed; inset: 0; background: #000; z-index: 400; display: none; }
   .livecam.open { display: block; }
   .livecam-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
@@ -713,9 +713,9 @@
   </div>
   <div class="scan-wrap">
     <button class="scan-cam-btn live" id="scanLiveBtn" onclick="openLiveCam()"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6.5" width="13" height="11" rx="2"/><path d="M15 11l6-3.5v9L15 13z"/></svg> Live camera</button>
-    <button class="scan-cam-btn" id="scanCamBtn" onclick="document.getElementById('scanFile').click()"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5A2 2 0 0 1 5 6.5h2l1.4-2h7.2L17 6.5h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.4"/></svg> Add photo</button>
+    <button class="scan-cam-btn" id="scanCamBtn" style="display:none" onclick="document.getElementById('scanFile').click()"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5A2 2 0 0 1 5 6.5h2l1.4-2h7.2L17 6.5h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.4"/></svg> Add photo</button>
     <input type="file" accept="image/*" capture="environment" id="scanFile" style="display:none" onchange="handleScanCapture(event)">
-    <div class="scan-offline" id="scanOffline">You're offline — scanning needs internet to load the reader.<br>Enter values manually with + Add, or reconnect and try again.</div>
+    <div class="scan-offline" id="scanOffline">You're offline — scanning needs a connection to load the reader.<br>Enter values manually, or reconnect and try again.</div>
 
     <div class="scan-queue-head">
       <h2>To read</h2>
@@ -1269,9 +1269,12 @@ async function openLiveCam() {
   } catch (e) {
     err.innerHTML = 'Could not open the camera.<br><br>' +
       (e && e.name === 'NotAllowedError'
-        ? 'Camera permission was denied. Allow camera access in your browser settings, or use “<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5A2 2 0 0 1 5 6.5h2l1.4-2h7.2L17 6.5h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.4"/></svg> Add photo” instead.'
-        : 'Your device or browser may not support this. Use “<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5A2 2 0 0 1 5 6.5h2l1.4-2h7.2L17 6.5h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.4"/></svg> Add photo” instead.');
+        ? 'Camera permission was denied. Allow camera access in your browser settings, or use the “Add photo” button that has appeared below.'
+        : 'Your device or browser may not support this. Use the “Add photo” button that has appeared below.');
     err.classList.add('show');
+    // reveal the file-picker fallback so you're never left without a way to scan
+    const fb = document.getElementById('scanCamBtn');
+    if (fb) { fb.style.display = 'flex'; fb.disabled = false; }
     return;
   }
   const video = document.getElementById('liveVideo');
