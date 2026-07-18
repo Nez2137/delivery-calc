@@ -191,7 +191,9 @@
 
   .shift-card { margin: 12px 12px 0; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; animation: fadeIn 0.2s ease; }
   .shift-card-header { display: flex; justify-content: space-between; align-items: center; padding: 11px 14px; border-bottom: 1px solid var(--border); background: var(--surface2); }
-  .shift-datetime { font-size: 12px; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+  .shift-datetime { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); font-family: 'JetBrains Mono', monospace; background: none; border: none; padding: 2px 0; cursor: pointer; text-align: left; }
+  .shift-datetime:active { color: var(--accent); }
+  .ico-edit { width: 12px; height: 12px; opacity: .5; flex-shrink: 0; }
   .shift-actions { display: flex; gap: 6px; align-items: center; }
   .shift-copy-btn { background: none; border: 1px solid #2a2a2a; color: var(--muted); font-size: 11px; font-family: 'JetBrains Mono', monospace; padding: 3px 8px; border-radius: 6px; cursor: pointer; }
   .shift-copy-btn:active { color: var(--green); border-color: var(--green); }
@@ -272,6 +274,29 @@
     transition: border-color 0.15s, color 0.15s; flex-shrink: 0;
   }
   .btn-calc-open:active { border-color: var(--orange); color: var(--orange); }
+
+  /* ── Confirm dialog ── */
+  .dlg-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.72); z-index: 900;
+    display: none; align-items: center; justify-content: center; padding: 26px;
+  }
+  .dlg-overlay.open { display: flex; }
+  .dlg {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 15px;
+    padding: 22px 20px 16px; max-width: 340px; width: 100%;
+    animation: dlgIn .16s ease;
+  }
+  @keyframes dlgIn { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: none; } }
+  .dlg-msg { color: var(--text); font-size: 14.5px; line-height: 1.6; margin-bottom: 18px; white-space: pre-line; }
+  .dlg-actions { display: flex; gap: 9px; }
+  .dlg-btn {
+    flex: 1; padding: 12px; border-radius: 10px; cursor: pointer;
+    font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 600;
+  }
+  .dlg-btn.cancel { background: transparent; border: 1px solid var(--border); color: var(--muted); }
+  .dlg-btn.ok { background: var(--accent); border: 1px solid var(--accent); color: #0B0D0F; }
+  .dlg-btn.ok.danger { background: var(--owe); border-color: var(--owe); color: #0B0D0F; }
+  .dlg-btn:active { opacity: .85; }
 
   /* ── Lock screen ── */
   .lock-screen {
@@ -944,7 +969,7 @@ function buildSnapshot() {
 function snapshotToText(s) {
   return [
     '── Driver Wage Calc ──',
-    fmtDateTime(s.ts),
+    fmtDateTime(shiftDate(s)),
     '',
     'Cash Held:    ' + fmt(s.cashHeld),
     '  Notes:      ' + fmt(s.notes),
@@ -1030,9 +1055,9 @@ function renderHistory() {
     card.className = 'shift-card';
     card.innerHTML = `
       <div class="shift-card-header">
-        <span class="shift-datetime">${fmtDateTime(s.ts)}</span>
+        <button class="shift-datetime" onclick="editShiftDate(${i})" title="Tap to change the date">${fmtDateTime(shiftDate(s))}<svg class="ico-edit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>
         <div class="shift-actions">
-          <button class="shift-copy-btn" onclick="loadShift(${i})" style="color:var(--accent);border-color:#1e3a4a">load</button>
+          <button class="shift-copy-btn" onclick="loadShift(${i})" style="color:var(--accent);border-color:var(--accent-line)">load</button>
           <button class="shift-copy-btn" onclick="copyShift(${i})">copy</button>
           <button class="shift-del" onclick="deleteShift(${i})">×</button>
         </div>
@@ -1059,6 +1084,54 @@ function copyShift(idx) {
   copyText(snapshotToText(history[idx]));
 }
 
+// The displayed date: the edited one if set, otherwise the original save time.
+// `ts` stays untouched as the record's permanent identity, so backup imports
+// can still detect duplicates reliably after a date has been changed.
+function shiftDate(s) { return s.date || s.ts; }
+
+// Edit a shift's date/time via the native picker
+function editShiftDate(idx) {
+  const history = loadHistory();
+  const s = history[idx];
+  if (!s) return;
+
+  const cur = new Date(shiftDate(s));
+  const pad = n => String(n).padStart(2, '0');
+  const asLocal = d => d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate())
+                     + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+
+  const inp = document.createElement('input');
+  inp.type = 'datetime-local';
+  inp.value = asLocal(cur);
+  inp.style.cssText = 'position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:9999;opacity:0;pointer-events:none';
+  document.body.appendChild(inp);
+
+  const cleanup = () => { if (inp.parentNode) document.body.removeChild(inp); };
+  inp.addEventListener('change', () => {
+    if (inp.value) {
+      const picked = new Date(inp.value);
+      if (!isNaN(picked.getTime())) {
+        const h = loadHistory();
+        if (h[idx]) {
+          h[idx].date = picked.toISOString();
+          // keep newest-first ordering after a date change
+          h.sort((a, b) => new Date(shiftDate(b)) - new Date(shiftDate(a)));
+          saveHistory(h);
+          renderHistory();
+          showToast('Date updated');
+        }
+      }
+    }
+    cleanup();
+  });
+  inp.addEventListener('blur', () => setTimeout(cleanup, 300));
+
+  inp.style.pointerEvents = 'auto';
+  inp.focus();
+  if (inp.showPicker) { try { inp.showPicker(); } catch (e) { inp.click(); } }
+  else { inp.click(); }
+}
+
 
 function isCalcEmpty() {
   const hasBase    = ['notes','coins','orders','delivery'].some(k => parseFloat(state[k].base) > 0 || state[k].entries.length > 0);
@@ -1066,13 +1139,14 @@ function isCalcEmpty() {
   return !hasBase && !hasWage;
 }
 
-function loadShift(idx) {
+async function loadShift(idx) {
   const history = loadHistory();
   const s = history[idx];
   if (!s) return;
 
   if (!isCalcEmpty()) {
-    if (!confirm('Current values will be overwritten with this shift. Continue?')) return;
+    const ok = await confirmDialog('Current values will be overwritten with this shift. Continue?', { okText: 'Load' });
+    if (!ok) return;
   }
 
   // Notes/coins are plain cash counts — the total is all we need
@@ -1105,8 +1179,9 @@ function loadShift(idx) {
   showToast('✓ Shift loaded');
 }
 
-function deleteShift(idx) {
-  if (!confirm('Delete this shift record?')) return;
+async function deleteShift(idx) {
+  const ok = await confirmDialog('Delete this shift record?', { okText: 'Delete', danger: true });
+  if (!ok) return;
   const history = loadHistory();
   history.splice(idx, 1);
   saveHistory(history);
@@ -1155,11 +1230,11 @@ function handleImportFile(ev) {
   reader.onload = () => {
     let parsed;
     try { parsed = JSON.parse(reader.result); }
-    catch (e) { alert('That file isn\u2019t a valid backup (couldn\u2019t read it).'); return; }
-    if (!isValidBackup(parsed)) { alert('That file isn\u2019t a BK shift backup, or it\u2019s damaged. Nothing was changed.'); return; }
+    catch (e) { noticeDialog('That file isn\u2019t a valid backup — it couldn\u2019t be read.'); return; }
+    if (!isValidBackup(parsed)) { noticeDialog('That file isn\u2019t a Float backup, or it\u2019s damaged.\nNothing was changed.'); return; }
     mergeImportedShifts(parsed.shifts);
   };
-  reader.onerror = () => alert('Could not read that file. Nothing was changed.');
+  reader.onerror = () => noticeDialog('Could not read that file.\nNothing was changed.');
   reader.readAsText(file);
 }
 
@@ -1171,7 +1246,7 @@ function mergeImportedShifts(incoming) {
     if (!seen.has(s.ts)) { current.push(s); seen.add(s.ts); added++; }
   });
   if (added === 0) {
-    alert('Nothing new to import — all ' + incoming.length + ' shift' + (incoming.length !== 1 ? 's' : '') + ' are already in your history.');
+    noticeDialog('Nothing new to import — all ' + incoming.length + ' shift' + (incoming.length !== 1 ? 's' : '') + ' are already in your history.');
     return;
   }
   // newest first, then respect the cap
@@ -1184,8 +1259,9 @@ function mergeImportedShifts(incoming) {
 }
 
 // ── Reset ────────────────────────────────────────────────────
-function resetAll() {
-  if (!confirm('Reset all current values?\n(Shift history is kept.)')) return;
+async function resetAll() {
+  const ok = await confirmDialog('Reset all current values?\nShift history is kept.', { okText: 'Reset', danger: true });
+  if (!ok) return;
   ['notes','coins','orders','delivery'].forEach(k => { state[k] = { base: '', entries: [] }; });
   state.wage = '';
   localStorage.removeItem(STORE_KEY);
@@ -1841,6 +1917,34 @@ if ('serviceWorker' in navigator) {
   });
 }
 
+// ── In-app dialog ─────────────────────────────────────────────
+// Replaces window.confirm/alert, which are blocked in some embedded contexts
+// (e.g. the artifact sandbox) and silently return without asking.
+let dlgResolve = null;
+
+function showDialog(msg, opts) {
+  opts = opts || {};
+  return new Promise(resolve => {
+    dlgResolve = resolve;
+    document.getElementById('dlgMsg').textContent = msg;
+    const ok = document.getElementById('dlgOk');
+    const cancel = document.getElementById('dlgCancel');
+    ok.textContent = opts.okText || 'Confirm';
+    ok.classList.toggle('danger', !!opts.danger);
+    cancel.style.display = opts.noticeOnly ? 'none' : 'block';
+    if (opts.noticeOnly) ok.textContent = opts.okText || 'OK';
+    document.getElementById('dlgOverlay').classList.add('open');
+  });
+}
+function dlgRespond(val) {
+  document.getElementById('dlgOverlay').classList.remove('open');
+  const r = dlgResolve; dlgResolve = null;
+  if (r) r(val);
+}
+// convenience wrappers
+function confirmDialog(msg, opts) { return showDialog(msg, opts); }
+function noticeDialog(msg) { return showDialog(msg, { noticeOnly: true }); }
+
 // ── Wake Lock ─────────────────────────────────────────────────
 // The screen wake lock is fragile: it can be rejected if the page isn't
 // visible when requested, and the system can release it at any time. So we
@@ -1886,6 +1990,17 @@ document.addEventListener('visibilitychange', () => {
 function requestWakeLock() { startWakeLock(); }
 
 </script>
+
+<!-- ── Confirm / notice dialog ── -->
+<div class="dlg-overlay" id="dlgOverlay">
+  <div class="dlg">
+    <div class="dlg-msg" id="dlgMsg"></div>
+    <div class="dlg-actions">
+      <button class="dlg-btn cancel" id="dlgCancel" onclick="dlgRespond(false)">Cancel</button>
+      <button class="dlg-btn ok" id="dlgOk" onclick="dlgRespond(true)">Confirm</button>
+    </div>
+  </div>
+</div>
 
 <!-- ── Mini Calculator Sheet ── -->
 <div class="calc-sheet-overlay" id="calcOverlay" onclick="closeCalc()"></div>
