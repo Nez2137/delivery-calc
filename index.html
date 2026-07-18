@@ -1425,7 +1425,7 @@ async function scanReadAll() {
   scanUpdateProgress(total, total);
   setTimeout(() => document.getElementById('scanProgress').classList.remove('show'), 400);
   document.getElementById('scanCamBtn').disabled = false;
-  scanShowReview();
+  scanShowReview(true);   // first reveal after reading — jump to the results
 }
 
 function scanUpdateProgress(done, total) {
@@ -1537,7 +1537,10 @@ function scanCleanTag(s) {
 
 function scanEscape(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-function scanShowReview() {
+function scanShowReview(scrollToIt) {
+  // Rebuilding the list can shift the page; remember where we were so a
+  // cash/card toggle or a removal leaves you exactly where you were reading.
+  const keepScroll = !scrollToIt ? (window.scrollY || window.pageYOffset || 0) : null;
   const list = document.getElementById('scanReviewList');
   list.innerHTML = '';
   let readCount = 0;
@@ -1568,7 +1571,15 @@ function scanShowReview() {
   });
   document.getElementById('scanReviewSum').textContent = readCount + ' of ' + scanTickets.length + ' read';
   document.getElementById('scanReview').classList.add('show');
-  document.getElementById('scanReview').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // Only jump to the results on the first reveal (after reading). Re-renders
+  // triggered by toggling cash/card or removing a ticket must NOT scroll,
+  // otherwise you get yanked to the top mid-review.
+  if (scrollToIt) {
+    document.getElementById('scanReview').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } else if (keepScroll !== null) {
+    // restore the exact position after the rebuild
+    window.scrollTo(0, keepScroll);
+  }
 }
 
 function scanToggleRaw(id) { document.getElementById('scanRaw-' + id).classList.toggle('show'); }
