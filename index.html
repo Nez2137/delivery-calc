@@ -390,14 +390,13 @@
   .scan-rev-top { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
   .scan-rev-thumb { width: 38px; height: 50px; border-radius: 8px; object-fit: cover; border: 1px solid var(--border); flex-shrink: 0; }
   .scan-rev-title { font-size: 13px; color: var(--muted); flex: 1; }
-  .scan-copyall-btn {
-    width: 100%; display: flex; align-items: center; justify-content: center; gap: 7px;
-    background: var(--surface2); border: 1px solid var(--border); color: var(--muted);
-    border-radius: 10px; padding: 10px; margin-bottom: 12px; cursor: pointer;
-    font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 500;
+  .scan-diag-row { display: flex; gap: 14px; margin: -4px 0 12px; }
+  .scan-diag-btn {
+    background: none; border: none; padding: 2px 0; cursor: pointer;
+    color: var(--faint); font-family: 'Space Grotesk', sans-serif; font-size: 11.5px;
+    text-decoration: underline; text-underline-offset: 3px;
   }
-  .scan-copyall-btn svg { width: 14px; height: 14px; }
-  .scan-copyall-btn:active { color: var(--text); border-color: var(--faint); }
+  .scan-diag-btn:active { color: var(--muted); }
   .scan-rev-raw-btn { background: none; border: 1px solid var(--border); color: var(--muted); font-size: 11px; padding: 4px 9px; border-radius: 7px; cursor: pointer; }
   .scan-rev-del-btn { background: none; border: 1px solid var(--border); color: #ff4444; font-size: 15px; width: 28px; height: 26px; border-radius: 7px; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; flex-shrink: 0; }
   .scan-rev-del-btn:active { background: rgba(255,68,68,0.15); }
@@ -769,10 +768,10 @@
         <h2>Results</h2>
         <span class="scan-review-sum" id="scanReviewSum"></span>
       </div>
-      <button class="scan-copyall-btn" onclick="scanCopyAllRaw()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg>
-        Copy all raw text
-      </button>
+      <div class="scan-diag-row">
+        <button class="scan-diag-btn" onclick="scanCopyAllRaw()">copy raw</button>
+        <button class="scan-diag-btn" onclick="scanExportDiagnostics()">export json</button>
+      </div>
       <div id="scanReviewList"></div>
       <button class="scan-add-btn" onclick="scanAddAll()">Add all</button>
       <div class="scan-note">
@@ -1581,16 +1580,23 @@ function scanAddrIsPostcode(ln) {
   return /^[A-Z]{1,2}\d{1,2}[A-Z]?\d?[A-Z]{0,2}$/i.test(c);
 }
 function scanAddrIsPhone(ln) {
-  // Loose on purpose: OCR often mangles the phone badly (e.g. "> 0795516 J"),
-  // leaving far fewer than 11 digits. Mostly-digits with few letters = phone.
+  // A long consecutive digit run is a phone even when OCR merges the customer
+  // name onto the same line ("ST ms. 07704049932").
+  if (/\d{9,}/.test(ln.replace(/[\s\-()]/g, ''))) return true;
+  // Otherwise: mostly digits with few letters — catches badly mangled phones
+  // like "> 0795516 J" where most digits were lost.
   const d = (ln.match(/\d/g) || []).length;
   const letters = (ln.match(/[A-Za-z]/g) || []).length;
   return d >= 6 && letters <= 3;
 }
+// OCR leaves table borders and edge artifacts at the start of lines
+// ("| 1 Milleath Walk", "> 0795516"), so strip leading non-alphanumerics
+// before testing a line's shape.
+function scanAddrStrip(ln) { return ln.replace(/^[^A-Za-z0-9]+/, '').trim(); }
 function scanAddrIsStreet(ln) {
   // The strongest signal: a real address line starts with a house number
   // followed by a word — "15 Parkhill Circle", "118 McIntosh Crescent".
-  return /^\s*\d{1,4}[A-Za-z]?[\s,]+[A-Za-z]/.test(ln);
+  return /^\d{1,4}[A-Za-z]?[\s,]+[A-Za-z]/.test(scanAddrStrip(ln));
 }
 // Address identifier — anchor on the "Miles" line (or the QTY header if that's
 // missing) and walk UPWARD. Rather than relying on the fragile phone line to
@@ -1626,10 +1632,10 @@ function scanExtractAddress(text) {
   let street;
   if (si !== -1) {
     // street line plus any wrap fragments below it ("WELLSIDE" + "END")
-    const block = collected.slice(si).join(' ').replace(/\s+/g, ' ').trim();
+    const block = collected.slice(si).map(scanAddrStrip).join(' ').replace(/\s+/g, ' ').trim();
     street = (block.includes(',') ? block.split(',')[0] : block).trim();
   } else {
-    const joined = collected.join(' ').replace(/\s+/g, ' ').trim();
+    const joined = collected.map(scanAddrStrip).join(' ').replace(/\s+/g, ' ').trim();
     street = (joined.includes(',') ? joined.split(',')[0] : joined).trim();
   }
   if (!street || scanAddrIsJunk(street)) return '';
@@ -1698,6 +1704,37 @@ function scanCopyRaw(id) {
   const t = scanTickets.find(x => x.id === id);
   if (!t) return;
   copyText((t.raw || '').trim() || '(nothing read)');
+}
+
+// Export full diagnostics as JSON: the raw OCR text alongside what the parser
+// pulled out of it. That pairing is what makes a bad label diagnosable —
+// it shows whether the OCR failed or the extraction picked the wrong line.
+function scanExportDiagnostics() {
+  if (!scanTickets.length) { showToast('Nothing to export'); return; }
+  scanSyncReviewEdits();
+  const payload = {
+    app: 'float',
+    type: 'scan-diagnostics',
+    version: 1,
+    exported: new Date().toISOString(),
+    count: scanTickets.length,
+    tickets: scanTickets.map((t, i) => ({
+      n: i + 1,
+      extracted: { total: t.order, delivery: t.deliv, label: t.tag || '' },
+      payment: t.pay || 'cash',
+      status: t.status,
+      raw: (t.raw || '').trim()
+    }))
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const d = new Date(), p = n => String(n).padStart(2, '0');
+  const stamp = d.getFullYear() + '-' + p(d.getMonth()+1) + '-' + p(d.getDate()) + '-' + p(d.getHours()) + p(d.getMinutes());
+  const a = document.createElement('a');
+  a.href = url; a.download = 'float-scan-' + stamp + '.json';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  showToast('Exported ' + scanTickets.length + ' ticket' + (scanTickets.length !== 1 ? 's' : ''));
 }
 
 // Copy every ticket's raw text in one go
