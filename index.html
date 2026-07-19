@@ -390,6 +390,14 @@
   .scan-rev-top { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
   .scan-rev-thumb { width: 38px; height: 50px; border-radius: 8px; object-fit: cover; border: 1px solid var(--border); flex-shrink: 0; }
   .scan-rev-title { font-size: 13px; color: var(--muted); flex: 1; }
+  .scan-copyall-btn {
+    width: 100%; display: flex; align-items: center; justify-content: center; gap: 7px;
+    background: var(--surface2); border: 1px solid var(--border); color: var(--muted);
+    border-radius: 10px; padding: 10px; margin-bottom: 12px; cursor: pointer;
+    font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 500;
+  }
+  .scan-copyall-btn svg { width: 14px; height: 14px; }
+  .scan-copyall-btn:active { color: var(--text); border-color: var(--faint); }
   .scan-rev-raw-btn { background: none; border: 1px solid var(--border); color: var(--muted); font-size: 11px; padding: 4px 9px; border-radius: 7px; cursor: pointer; }
   .scan-rev-del-btn { background: none; border: 1px solid var(--border); color: #ff4444; font-size: 15px; width: 28px; height: 26px; border-radius: 7px; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; flex-shrink: 0; }
   .scan-rev-del-btn:active { background: rgba(255,68,68,0.15); }
@@ -761,6 +769,10 @@
         <h2>Results</h2>
         <span class="scan-review-sum" id="scanReviewSum"></span>
       </div>
+      <button class="scan-copyall-btn" onclick="scanCopyAllRaw()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg>
+        Copy all raw text
+      </button>
       <div id="scanReviewList"></div>
       <button class="scan-add-btn" onclick="scanAddAll()">Add all</button>
       <div class="scan-note">
@@ -1569,16 +1581,24 @@ function scanAddrIsPostcode(ln) {
   return /^[A-Z]{1,2}\d{1,2}[A-Z]?\d?[A-Z]{0,2}$/i.test(c);
 }
 function scanAddrIsPhone(ln) {
-  // mostly digits with almost no letters = the phone line
+  // Loose on purpose: OCR often mangles the phone badly (e.g. "> 0795516 J"),
+  // leaving far fewer than 11 digits. Mostly-digits with few letters = phone.
   const d = (ln.match(/\d/g) || []).length;
   const letters = (ln.match(/[A-Za-z]/g) || []).length;
-  return d >= 9 && letters <= 2;
+  return d >= 6 && letters <= 3;
 }
+function scanAddrIsStreet(ln) {
+  // The strongest signal: a real address line starts with a house number
+  // followed by a word — "15 Parkhill Circle", "118 McIntosh Crescent".
+  return /^\s*\d{1,4}[A-Za-z]?[\s,]+[A-Za-z]/.test(ln);
+}
+// Address identifier — anchor on the "Miles" line (or the QTY header if that's
+// missing) and walk UPWARD. Rather than relying on the fragile phone line to
+// know where the address starts, we stop as soon as we hit a line that LOOKS
+// like a street. That shape is consistent across every ticket and survives the
+// OCR damage that breaks the neighbouring lines.
 function scanExtractAddress(text) {
   const lines = text.split('\n').map(l => l.trim());
-  // anchor priority: (1) the "Miles" line, (2) the QTY/Menu/Price header row.
-  // The header appears on every ticket, so it's the reliable backstop when
-  // Miles is missing.
   let anchorIdx = -1;
   for (let i = 0; i < lines.length; i++) {
     if (/\bmiles?\b/i.test(lines[i])) { anchorIdx = i; break; }
@@ -1588,28 +1608,36 @@ function scanExtractAddress(text) {
       if (/\bqty\b|menu\s*name|\bprice\b/i.test(lines[i])) { anchorIdx = i; break; }
     }
   }
-  if (anchorIdx === -1) return '';   // no anchor at all — blank label, safer than a guess
+  if (anchorIdx === -1) return '';
 
-  // walk upward from the anchor, collecting address lines
   const collected = [];
   for (let i = anchorIdx - 1; i >= 0 && collected.length < 4; i--) {
     const ln = lines[i];
     if (!ln) continue;
     if (scanAddrIsPostcode(ln)) continue;   // skip the postcode (even mangled)
-    if (scanAddrIsPhone(ln)) break;         // reached the phone — address is above, stop
-    if (scanAddrIsJunk(ln)) break;          // reached date/time/name/header — stop
+    if (scanAddrIsPhone(ln)) break;         // reached the phone — stop
+    if (scanAddrIsJunk(ln)) break;          // reached date/time/header — stop
     collected.unshift(ln);
+    if (scanAddrIsStreet(ln)) break;        // found the street — everything above is name/phone
   }
   if (collected.length === 0) return '';
-  const joined = collected.join(' ').replace(/\s+/g, ' ').trim();
-  // street portion up to the first comma — but not every address has one
-  const street = (joined.includes(',') ? joined.split(',')[0] : joined).trim();
+
+  const si = collected.findIndex(scanAddrIsStreet);
+  let street;
+  if (si !== -1) {
+    // street line plus any wrap fragments below it ("WELLSIDE" + "END")
+    const block = collected.slice(si).join(' ').replace(/\s+/g, ' ').trim();
+    street = (block.includes(',') ? block.split(',')[0] : block).trim();
+  } else {
+    const joined = collected.join(' ').replace(/\s+/g, ' ').trim();
+    street = (joined.includes(',') ? joined.split(',')[0] : joined).trim();
+  }
   if (!street || scanAddrIsJunk(street)) return '';
   return scanCleanTag(street);
 }
 function scanCleanTag(s) {
   // strip stray OCR chars and trailing punctuation, cap length
-  let t = s.replace(/[|_\\~]/g, '').replace(/\s+/g, ' ').trim().replace(/[,;:.\-]+$/, '');
+  let t = s.replace(/[|_\\~>]/g, '').replace(/\s+/g, ' ').trim().replace(/[,;:.\-]+$/, '');
   if (t.length > 28) t = t.slice(0, 28).trim() + '…';
   return t;
 }
@@ -1634,6 +1662,8 @@ function scanShowReview(scrollToIt) {
       '<div class="scan-rev-top"><img class="scan-rev-thumb" src="' + t.thumbUrl + '">' +
         '<span class="scan-rev-title">Ticket ' + (i+1) + '</span>' +
         '<button class="scan-rev-raw-btn" onclick="scanToggleRaw(' + t.id + ')">raw</button>' +
+        '<button class="scan-rev-raw-btn" onclick="scanCopyRaw(' + t.id + ')" title="Copy raw text">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;vertical-align:-1px"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg></button>' +
         '<button class="scan-rev-del-btn" onclick="scanRemoveReviewed(' + t.id + ')" title="Remove ticket">✕</button></div>' +
       '<div class="scan-pay-toggle">' +
         '<button class="scan-pay-btn' + (!isCard ? ' active' : '') + '" onclick="scanSetPay(' + t.id + ',\'cash\')"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg> Cash</button>' +
@@ -1662,6 +1692,22 @@ function scanShowReview(scrollToIt) {
 }
 
 function scanToggleRaw(id) { document.getElementById('scanRaw-' + id).classList.toggle('show'); }
+
+// One-click copy of a ticket's raw OCR text (for diagnosing bad reads)
+function scanCopyRaw(id) {
+  const t = scanTickets.find(x => x.id === id);
+  if (!t) return;
+  copyText((t.raw || '').trim() || '(nothing read)');
+}
+
+// Copy every ticket's raw text in one go
+function scanCopyAllRaw() {
+  if (!scanTickets.length) { showToast('Nothing to copy'); return; }
+  const all = scanTickets.map((t, i) =>
+    '─── Ticket ' + (i + 1) + (t.tag ? ' — ' + t.tag : '') + ' ───\n' + ((t.raw || '').trim() || '(nothing read)')
+  ).join('\n\n');
+  copyText(all);
+}
 
 // Flip a ticket between cash and card. Card = TOTAL excluded from Cash Orders
 // (customer paid the restaurant directly, so you never held that cash) but the
