@@ -190,6 +190,11 @@
   .history-empty { text-align: center; color: var(--faint); padding: 60px 20px; font-size: 14px; line-height: 2.2; }
 
   .shift-card { margin: 12px 12px 0; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; animation: fadeIn 0.2s ease; }
+  .month-header { display: flex; align-items: baseline; justify-content: space-between; margin: 20px 14px 4px; padding-bottom: 7px; border-bottom: 1px solid var(--border); }
+  .month-header:first-child { margin-top: 14px; }
+  .month-name { font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600; color: var(--muted); letter-spacing: 0.2px; }
+  .month-sum { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 600; color: var(--keep); font-variant-numeric: tabular-nums; }
+  .month-count { color: var(--faint); font-size: 11px; font-weight: 400; }
   .shift-card-header { display: flex; justify-content: space-between; align-items: center; padding: 11px 14px; border-bottom: 1px solid var(--border); background: var(--surface2); }
   .shift-datetime { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); font-family: 'JetBrains Mono', monospace; background: none; border: none; padding: 2px 0; cursor: pointer; text-align: left; }
   .shift-datetime:active { color: var(--accent); }
@@ -1061,7 +1066,34 @@ function renderHistory() {
     return;
   }
 
+  // Pre-compute each month's total earnings + shift count (history is
+  // already newest-first, so we emit a header when the month changes).
+  const monthKey = s => { const d = new Date(shiftDate(s)); return d.getFullYear() + '-' + d.getMonth(); };
+  const monthTotals = {};
+  history.forEach(s => {
+    const k = monthKey(s);
+    if (!monthTotals[k]) monthTotals[k] = { total: 0, count: 0 };
+    monthTotals[k].total += (s.total || 0);
+    monthTotals[k].count += 1;
+  });
+
+  let lastMonth = null;
   history.forEach((s, i) => {
+    // month subtotal header whenever the calendar month changes
+    const k = monthKey(s);
+    if (k !== lastMonth) {
+      lastMonth = k;
+      const d = new Date(shiftDate(s));
+      const label = d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+      const m = monthTotals[k];
+      const hdr = document.createElement('div');
+      hdr.className = 'month-header';
+      hdr.innerHTML = '<span class="month-name">' + label + '</span>' +
+        '<span class="month-sum">' + fmt(m.total) + ' <span class="month-count">· ' +
+        m.count + ' shift' + (m.count !== 1 ? 's' : '') + '</span></span>';
+      list.appendChild(hdr);
+    }
+
     const card = document.createElement('div');
     card.className = 'shift-card';
     card.innerHTML = `
