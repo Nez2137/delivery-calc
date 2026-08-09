@@ -190,9 +190,13 @@
   .history-empty { text-align: center; color: var(--faint); padding: 60px 20px; font-size: 14px; line-height: 2.2; }
 
   .shift-card { margin: 12px 12px 0; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; animation: fadeIn 0.2s ease; }
-  .month-header { display: flex; align-items: baseline; justify-content: space-between; margin: 20px 14px 4px; padding-bottom: 7px; border-bottom: 1px solid var(--border); }
+  .month-header { display: flex; align-items: baseline; justify-content: space-between; margin: 20px 14px 4px; padding: 6px 8px 7px; border-bottom: 1px solid var(--border); border-radius: 8px 8px 0 0; cursor: pointer; transition: background .15s; }
+  .month-header:active { background: var(--surface2); }
   .month-header:first-child { margin-top: 14px; }
-  .month-name { font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600; color: var(--muted); letter-spacing: 0.2px; }
+  .month-header.collapsed { border-bottom-color: transparent; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 0; }
+  .month-name { display: flex; align-items: center; gap: 6px; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600; color: var(--muted); letter-spacing: 0.2px; }
+  .month-chev { width: 13px; height: 13px; flex-shrink: 0; transition: transform .18s; color: var(--faint); }
+  .month-header.collapsed .month-chev { transform: rotate(-90deg); }
   .month-sum { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 600; color: var(--keep); font-variant-numeric: tabular-nums; }
   .month-count { color: var(--faint); font-size: 11px; font-weight: 400; }
   .shift-card-header { display: flex; justify-content: space-between; align-items: center; padding: 11px 14px; border-bottom: 1px solid var(--border); background: var(--surface2); }
@@ -815,13 +819,16 @@
 
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script>
-const MAX_HISTORY = 30;
+const MAX_HISTORY = 2000;   // long-term history (years of shifts); localStorage handles this easily
 const STORE_KEY   = 'drivercalc2';
 const HIST_KEY    = 'drivercalc2_history';
 
 // Wake-lock state — declared here (before bootAuth → init → startWakeLock runs)
 let wakeLock = null;
 let wakeWanted = false;   // do we currently want the screen kept awake?
+
+// Which history months are collapsed (session-only; current month open by default)
+let histMonthCollapsed = {};
 
 // ── State ────────────────────────────────────────────────────
 let state = {
@@ -1078,6 +1085,7 @@ function renderHistory() {
   });
 
   let lastMonth = null;
+  const nowKey = (() => { const d = new Date(); return d.getFullYear() + '-' + d.getMonth(); })();
   history.forEach((s, i) => {
     // month subtotal header whenever the calendar month changes
     const k = monthKey(s);
@@ -1086,13 +1094,21 @@ function renderHistory() {
       const d = new Date(shiftDate(s));
       const label = d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
       const m = monthTotals[k];
+      // default: current month expanded, older months collapsed
+      if (!(k in histMonthCollapsed)) histMonthCollapsed[k] = (k !== nowKey);
+      const collapsed = histMonthCollapsed[k];
       const hdr = document.createElement('div');
-      hdr.className = 'month-header';
-      hdr.innerHTML = '<span class="month-name">' + label + '</span>' +
+      hdr.className = 'month-header' + (collapsed ? ' collapsed' : '');
+      hdr.onclick = () => { histMonthCollapsed[k] = !histMonthCollapsed[k]; renderHistory(); };
+      hdr.innerHTML =
+        '<span class="month-name"><svg class="month-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>' + label + '</span>' +
         '<span class="month-sum">' + fmt(m.total) + ' <span class="month-count">· ' +
         m.count + ' shift' + (m.count !== 1 ? 's' : '') + '</span></span>';
       list.appendChild(hdr);
     }
+
+    // skip rendering the shift cards for a collapsed month
+    if (histMonthCollapsed[monthKey(s)]) return;
 
     const card = document.createElement('div');
     card.className = 'shift-card';
