@@ -1036,14 +1036,29 @@ function fallbackCopy(text) {
   document.body.removeChild(ta);
 }
 
-function exportShift() {
+async function exportShift() {
   const snap = buildSnapshot();
-  // Save to history
   const history = loadHistory();
+
+  // Warn if a shift already exists for the same calendar day (respects edited
+  // dates). Confirm rather than block — a second shift in one day is valid.
+  const sameDay = d1 => {
+    const a = new Date(d1), b = new Date(snap.ts);
+    return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  };
+  const existing = history.filter(s => sameDay(shiftDate(s)));
+  if (existing.length) {
+    const when = new Date(snap.ts).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+    const ok = await confirmDialog(
+      'You already have ' + existing.length + ' shift' + (existing.length !== 1 ? 's' : '') +
+      ' saved for ' + when + '.\nSave another for this day?',
+      { okText: 'Save anyway' });
+    if (!ok) return;
+  }
+
   history.unshift(snap);
   if (history.length > MAX_HISTORY) history.splice(MAX_HISTORY);
   saveHistory(history);
-  // Copy to clipboard
   copyText(snapshotToText(snap));
   showToast('✓ Saved & copied');
 }
