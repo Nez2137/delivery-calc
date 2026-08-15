@@ -124,7 +124,7 @@
   .btn-confirm:active { opacity: 0.7; }
   .btn-cancel { background: none; border: none; color: var(--faint); font-size: 20px; cursor: pointer; padding: 4px; }
 
-  .combined-pill { margin-top: 10px; padding: 7px 12px; background: #0e0e0e; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
+  .combined-pill { margin: 10px 0 14px; padding: 9px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 9px; display: flex; justify-content: space-between; align-items: center; }
   .combined-label { font-size: 11px; color: var(--faint); letter-spacing: 0.5px; }
   .combined-val { font-size: 16px; color: var(--green); }
 
@@ -615,12 +615,16 @@
         <div class="section-right"><span class="section-total" id="orders-total">£0.00</span><span class="chevron">▼</span></div>
       </button>
       <div class="section-body">
+        <div class="entries-list" id="orders-entries"></div>
+        <div class="combined-pill" id="orders-pill" style="display:none">
+          <span class="combined-label">Combined orders</span>
+          <span class="combined-val" id="orders-combined">£0.00</span>
+        </div>
         <div class="input-label">Cash orders</div>
         <div class="input-wrap">
           <span class="input-prefix">£</span>
           <input class="num-input" type="number" inputmode="decimal" id="orders-base" placeholder="0.00" oninput="recalc()">
         </div>
-        <div class="entries-list" id="orders-entries"></div>
         <div class="add-row">
           <button class="btn-add" onclick="showInlineAdd('orders')">+ Add</button>
           <button class="btn-calc-open" onclick="openCalc('orders')" title="Calculator"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2.5" width="16" height="19" rx="2"/><path d="M8 7h8M8 12h.01M12 12h.01M16 12h.01M8 16.5h.01M12 16.5h.01M16 16.5h.01"/></svg></button>
@@ -631,10 +635,6 @@
             <button class="btn-cancel"  onclick="hideInlineAdd('orders')">✕</button>
             <input class="add-tag-input" type="text" id="orders-add-tag" placeholder="Label (optional)" onkeydown="if(event.key==='Enter') confirmAdd('orders')">
           </div>
-        </div>
-        <div class="combined-pill" id="orders-pill" style="display:none">
-          <span class="combined-label">Combined orders</span>
-          <span class="combined-val" id="orders-combined">£0.00</span>
         </div>
       </div>
     </div>
@@ -655,12 +655,16 @@
         <div class="section-right"><span class="section-total" id="delivery-total">£0.00</span><span class="chevron">▼</span></div>
       </button>
       <div class="section-body">
+        <div class="entries-list" id="delivery-entries"></div>
+        <div class="combined-pill" id="delivery-pill" style="display:none">
+          <span class="combined-label">Combined delivery</span>
+          <span class="combined-val" id="delivery-combined">£0.00</span>
+        </div>
         <div class="input-label">Delivery charges</div>
         <div class="input-wrap">
           <span class="input-prefix">£</span>
           <input class="num-input" type="number" inputmode="decimal" id="delivery-base" placeholder="0.00" oninput="recalc()">
         </div>
-        <div class="entries-list" id="delivery-entries"></div>
         <div class="add-row">
           <button class="btn-add" onclick="showInlineAdd('delivery')">+ Add</button>
           <button class="btn-calc-open" onclick="openCalc('delivery')" title="Calculator"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2.5" width="16" height="19" rx="2"/><path d="M8 7h8M8 12h.01M12 12h.01M16 12h.01M8 16.5h.01M12 16.5h.01M16 16.5h.01"/></svg></button>
@@ -671,10 +675,6 @@
             <button class="btn-cancel"  onclick="hideInlineAdd('delivery')">✕</button>
             <input class="add-tag-input" type="text" id="delivery-add-tag" placeholder="Label (optional)" onkeydown="if(event.key==='Enter') confirmAdd('delivery')">
           </div>
-        </div>
-        <div class="combined-pill" id="delivery-pill" style="display:none">
-          <span class="combined-label">Combined delivery</span>
-          <span class="combined-val" id="delivery-combined">£0.00</span>
         </div>
       </div>
     </div>
