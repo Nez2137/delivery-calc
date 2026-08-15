@@ -142,6 +142,9 @@
   /* ── Summary ── */
   .summary-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px 18px; margin-bottom: 10px; }
   .summary-heading { font-family: 'Space Grotesk', sans-serif; color: var(--muted); font-size: 11px; font-weight: 500; letter-spacing: 0.6px; text-transform: uppercase; margin-bottom: 10px; }
+  .summary-heading-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .summary-heading-row .summary-heading { margin-bottom: 0; }
+  .orders-chip { font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; color: var(--accent); background: var(--accent-dim); border: 1px solid var(--accent-line); border-radius: 20px; padding: 3px 10px; letter-spacing: 0.2px; }
   .summary-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-top: 1px solid var(--border); }
   .summary-row-label { font-size: 13px; color: var(--muted); }
   .summary-row-val { font-size: 14px; color: var(--text); font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
@@ -693,7 +696,10 @@
 
     <!-- SUMMARY -->
     <div class="summary-card">
-      <div class="summary-heading">Summary</div>
+      <div class="summary-heading-row">
+        <span class="summary-heading">Summary</span>
+        <span class="orders-chip" id="orders-chip" style="display:none"><span id="orders-chip-n">0</span> orders</span>
+      </div>
       <div class="summary-row">
         <span class="summary-row-label" style="color:var(--muted)">Tips</span>
         <span class="summary-row-val"   style="color:var(--keep)" id="sum-tips">£0.00</span>
@@ -954,6 +960,15 @@ function recalc() {
   document.getElementById('sum-wage').textContent       = fmt(wage);
   document.getElementById('sum-total').textContent      = fmt(grand);
 
+  // live order count = number of delivery entries (each delivery ≈ one order,
+  // includes card orders since those still add a delivery entry)
+  const orderCount = state.delivery.entries.length;
+  const chip = document.getElementById('orders-chip');
+  if (chip) {
+    chip.style.display = orderCount > 0 ? 'inline-block' : 'none';
+    document.getElementById('orders-chip-n').textContent = orderCount;
+  }
+
   // Cash to return to boss: cash held minus total earnings
   const cashBack    = cashHeld - grand;
   const cashBackRow = document.getElementById('cash-back-row');
@@ -979,6 +994,7 @@ function buildSnapshot() {
     delivery:      v.deliveryTotal,
     wage:          v.wage,
     total:         v.grand,
+    orderCount:    state.delivery.entries.length,   // number of orders (delivery entries)
     // Full detail for the ticket fields so a restore brings back the individual
     // entries and their address labels — not just the collapsed total.
     // (Notes/coins are plain cash counts, so their total is enough.)
@@ -1000,6 +1016,7 @@ function snapshotToText(s) {
     'Cash Orders:  ' + fmt(s.orders),
     'Tips:         ' + fmt(s.tips),
     'Delivery:     ' + fmt(s.delivery),
+    ...(shiftOrderCount(s) != null ? ['Orders:       ' + shiftOrderCount(s)] : []),
     'Wage:         ' + fmt(s.wage),
     ...(s.finalOrder ? [
       '',
@@ -1140,7 +1157,7 @@ function renderHistory() {
         <div class="shift-row"><span class="shift-row-label">Cash Held</span><span class="shift-row-val">${fmt(s.cashHeld)}</span></div>
         <div class="shift-row"><span class="shift-row-label">Cash Orders</span><span class="shift-row-val">${fmt(s.orders)}</span></div>
         <div class="shift-row"><span class="shift-row-label">Tips</span><span class="shift-row-val" style="color:var(--keep)">${fmt(s.tips)}</span></div>
-        <div class="shift-row"><span class="shift-row-label">Delivery</span><span class="shift-row-val">${fmt(s.delivery)}</span></div>
+        <div class="shift-row"><span class="shift-row-label">Delivery${shiftOrderCount(s) != null ? ' · ' + shiftOrderCount(s) + ' order' + (shiftOrderCount(s) !== 1 ? 's' : '') : ''}</span><span class="shift-row-val">${fmt(s.delivery)}</span></div>
         <div class="shift-row" style="border:none"><span class="shift-row-label">Wage</span><span class="shift-row-val">${fmt(s.wage)}</span></div>
         ${s.finalOrder ? `<div class="shift-row" style="border:none"><span class="shift-row-label" style="color:#a78bfa">+ Final Order</span><span class="shift-row-val" style="color:#a78bfa">${fmt(s.finalOrder.extra)}</span></div>` : ''}
         <div class="shift-total-row">
@@ -1162,6 +1179,16 @@ function copyShift(idx) {
 // `ts` stays untouched as the record's permanent identity, so backup imports
 // can still detect duplicates reliably after a date has been changed.
 function shiftDate(s) { return s.date || s.ts; }
+
+// Order count for a shift: the stored count, or (for shifts saved before this
+// feature) derived from the saved delivery entries. null if neither is available.
+function shiftOrderCount(s) {
+  if (typeof s.orderCount === 'number') return s.orderCount;
+  if (s.detail && s.detail.delivery && Array.isArray(s.detail.delivery.entries)) {
+    return s.detail.delivery.entries.length;
+  }
+  return null;
+}
 
 // Edit a shift's date/time via the native picker
 function editShiftDate(idx) {
