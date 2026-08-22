@@ -44,6 +44,7 @@
     padding: 18px 16px 16px; margin-bottom: 14px;
     display: flex; align-items: center; justify-content: space-between;
     border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 50;
   }
   .header-mark {
     display: flex; align-items: center; gap: 11px;
@@ -1044,20 +1045,27 @@ async function exportShift() {
   const snap = buildSnapshot();
   const history = loadHistory();
 
-  // Warn if a shift already exists for the same calendar day (respects edited
-  // dates). Confirm rather than block — a second shift in one day is valid.
+  // One shift per day: if today already has one, offer to overwrite it rather
+  // than add a duplicate. (Same calendar day, respecting edited dates.)
   const sameDay = d1 => {
     const a = new Date(d1), b = new Date(snap.ts);
     return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
   };
-  const existing = history.filter(s => sameDay(shiftDate(s)));
-  if (existing.length) {
+  const existingIdx = history.findIndex(s => sameDay(shiftDate(s)));
+  if (existingIdx !== -1) {
     const when = new Date(snap.ts).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
     const ok = await confirmDialog(
-      'You already have ' + existing.length + ' shift' + (existing.length !== 1 ? 's' : '') +
-      ' saved for ' + when + '.\nSave another for this day?',
-      { okText: 'Save anyway' });
+      'A shift is already saved for ' + when + '.\nOverwrite it with the current values?',
+      { okText: 'Overwrite' });
     if (!ok) return;
+    // preserve the existing shift's date, replace everything else
+    snap.date = shiftDate(history[existingIdx]);
+    history.splice(existingIdx, 1);
+    history.unshift(snap);
+    saveHistory(history);
+    copyText(snapshotToText(snap));
+    showToast('✓ Updated & copied');
+    return;
   }
 
   history.unshift(snap);
