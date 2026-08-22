@@ -131,13 +131,6 @@
   /* ── Banners ── */
   .cash-held-banner { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 13px 16px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
   .cash-held-label { font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--muted); }
-  .tips-banner { border-radius: 12px; padding: 12px 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border); background: var(--surface); transition: background 0.3s, border-color 0.3s; }
-  .tips-banner.positive { background: var(--keep-dim); border-color: rgba(74,222,128,0.4); }
-  .tips-title { display: flex; align-items: center; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--muted); }
-  .tips-banner.positive .tips-title { color: var(--keep); }
-  .tips-sub { font-size: 11px; color: var(--faint); margin-top: 2px; }
-  .tips-val { font-size: 21px; color: var(--faint); font-family: 'JetBrains Mono', monospace; font-weight: 500; font-variant-numeric: tabular-nums; }
-  .tips-banner.positive .tips-val { color: var(--keep); }
 
   /* ── Summary ── */
   .summary-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px 18px; margin-bottom: 10px; }
@@ -639,15 +632,6 @@
       </div>
     </div>
 
-    <!-- TIPS -->
-    <div class="tips-banner" id="tips-banner">
-      <div>
-        <div class="tips-title"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5.5c0-1.9-2.2-3-5-3s-5 1.1-5 3 2.2 2.7 5 3.2 5 1.3 5 3.3-2.2 3-5 3-5-1.1-5-3"/></svg> Tips</div>
-        <div class="tips-sub">Cash held − cash orders</div>
-      </div>
-      <span class="tips-val" id="tips-val">£0.00</span>
-    </div>
-
     <!-- DELIVERY -->
     <div class="section open" id="sec-delivery">
       <button class="section-header" onclick="toggleSection('sec-delivery')">
@@ -952,13 +936,15 @@ function recalc() {
   document.getElementById('orders-total').textContent   = fmt(ordersTotal);
   document.getElementById('delivery-total').textContent = fmt(deliveryTotal);
   document.getElementById('wage-total').textContent     = fmt(wage);
-  const tipsReady = cashHeld > 0 && ordersTotal > 0;
-  document.getElementById('tips-val').textContent = tipsReady ? fmt(tips) : '—';
-  document.getElementById('tips-banner').classList.toggle('positive', tipsReady && tips > 0);
-  document.getElementById('sum-tips').textContent       = fmt(tips);
-  document.getElementById('sum-delivery').textContent   = fmt(deliveryTotal);
-  document.getElementById('sum-wage').textContent       = fmt(wage);
-  document.getElementById('sum-total').textContent      = fmt(grand);
+
+  // Earnings summary stays blank until you've counted your cash. This is the
+  // scan-first-count-later case: orders/delivery may be full from scanning,
+  // but tips/total are meaningless until Cash Held is entered, so show —.
+  const summaryReady = cashHeld > 0;
+  document.getElementById('sum-tips').textContent     = summaryReady ? fmt(tips) : '—';
+  document.getElementById('sum-delivery').textContent = summaryReady ? fmt(deliveryTotal) : '—';
+  document.getElementById('sum-wage').textContent     = summaryReady ? fmt(wage) : '—';
+  document.getElementById('sum-total').textContent    = summaryReady ? fmt(grand) : '—';
 
   // live order count = number of delivery entries (each delivery ≈ one order,
   // includes card orders since those still add a delivery entry)
@@ -973,7 +959,7 @@ function recalc() {
   const cashBack    = cashHeld - grand;
   const cashBackRow = document.getElementById('cash-back-row');
   if (cashBackRow) {
-    cashBackRow.style.display = cashHeld > 0 ? 'flex' : 'none';
+    cashBackRow.style.display = summaryReady ? 'flex' : 'none';
     document.getElementById('sum-cash-back').textContent = fmt(Math.max(0, cashBack));
   }
 
