@@ -129,8 +129,9 @@
   .combined-val { font-size: 16px; color: var(--green); }
 
   /* ── Banners ── */
-  .cash-held-banner { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 13px 16px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
-  .cash-held-label { font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--muted); }
+  .cash-held-banner { background: none; border: none; padding: 4px 18px 10px; margin: -2px 0 8px; display: flex; justify-content: space-between; align-items: baseline; }
+  .cash-held-label { font-family: 'Space Grotesk', sans-serif; font-size: 12.5px; font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--muted); }
+  .cash-held-val { font-family: 'JetBrains Mono', monospace; font-weight: 600; color: var(--text); font-size: 14px; font-variant-numeric: tabular-nums; }
 
   /* ── Summary ── */
   .summary-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px 18px; margin-bottom: 10px; }
@@ -598,7 +599,7 @@
     <!-- CASH HELD -->
     <div class="cash-held-banner">
       <span class="cash-held-label">Total cash held</span>
-      <span class="section-total" id="cash-held-val">£0.00</span>
+      <span class="cash-held-val" id="cash-held-val">£0.00</span>
     </div>
 
     <!-- CASH ORDERS -->
