@@ -44,8 +44,8 @@
     padding: 18px 16px 16px; margin-bottom: 14px;
     display: flex; align-items: center; justify-content: space-between;
     border-bottom: 1px solid var(--border);
-    position: sticky; top: 0; z-index: 50;
   }
+  .header.sticky { position: sticky; top: 0; z-index: 50; }
   .header-mark {
     display: flex; align-items: center; gap: 11px;
   }
@@ -511,7 +511,7 @@
 
 <!-- ═══════════════════════════════ MAIN ═══════════════════════════════ -->
 <div id="mainView">
-  <div class="header">
+  <div class="header" id="appHeader">
     <div class="header-mark">
       <div class="header-glyph">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -915,7 +915,17 @@ function toggleSection(id) {
   const open = !sec.classList.contains('open');
   sec.classList.toggle('open', open);
   state.sections[id] = open;
+  updateHeaderSticky();
   save();
+}
+
+// Header sticks to the top only when every section is collapsed. As soon as
+// any section is expanded (page gets long, you're working in it), the header
+// releases and scrolls away.
+function updateHeaderSticky() {
+  const anyOpen = document.querySelectorAll('.section.open').length > 0;
+  const hdr = document.getElementById('appHeader');
+  if (hdr) hdr.classList.toggle('sticky', !anyOpen);
 }
 
 // ── Recalc ───────────────────────────────────────────────────
@@ -1376,6 +1386,7 @@ function applyState() {
     const el = document.getElementById(id);
     if (el) el.classList.toggle('open', open);
   });
+  updateHeaderSticky();
   recalc();
 }
 
