@@ -1139,8 +1139,8 @@ async function exportShift() {
       'A shift is already saved for ' + when + '.\nOverwrite it with the current values?',
       { okText: 'Overwrite' });
     if (!ok) return;
-    // preserve the existing shift's date, replace everything else
-    snap.date = shiftDate(history[existingIdx]);
+    // Overwrite = a fresh save, so use the current save time (snap.ts is
+    // already now). Don't inherit the old shift's date/time.
     history.splice(existingIdx, 1);
     history.unshift(snap);
     saveHistory(history);
