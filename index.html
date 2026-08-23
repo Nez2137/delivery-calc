@@ -1124,6 +1124,11 @@ function fallbackCopy(text) {
 }
 
 async function exportShift() {
+  // Don't save a shift with nothing in it
+  if (isCalcEmpty()) {
+    noticeDialog('Nothing to save yet — add some cash, orders, or a wage first.');
+    return;
+  }
   const snap = buildSnapshot();
   const history = loadHistory();
 
