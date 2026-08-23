@@ -1,4 +1,4 @@
-const CACHE = 'bk-wage-v6';
+const CACHE = 'float-v7';
 
 // Install — minimal, just activate immediately
 self.addEventListener('install', e => {

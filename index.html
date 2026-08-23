@@ -1488,7 +1488,8 @@ function scanPersist() {
       }))
     };
     localStorage.setItem(SCAN_STORE_KEY, JSON.stringify(data));
-  } catch (e) {}
+    console.log('[scan] persisted ' + readable.length + ' tickets');
+  } catch (e) { console.log('[scan] persist FAILED: ' + e.message); }
 }
 function scanClearPersist() {
   try { localStorage.removeItem(SCAN_STORE_KEY); } catch (e) {}
@@ -1518,7 +1519,10 @@ function scanRestorePersisted() {
 // On app start, if a scan batch was left un-added, offer to resume it.
 async function scanOfferResume() {
   const n = scanHasPersisted();
+  console.log('[scan] resume check on load — found ' + n + ' persisted tickets');
   if (!n) return;
+  // small delay so the dialog mounts cleanly after the app UI is shown
+  await new Promise(r => setTimeout(r, 400));
   const ok = await confirmDialog(
     'You have ' + n + ' scanned ticket' + (n !== 1 ? 's' : '') + ' from before that weren\u2019t added yet.\nResume that scan?',
     { okText: 'Resume' });
