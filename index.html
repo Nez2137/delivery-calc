@@ -397,6 +397,7 @@
   .scan-rev-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin-bottom: 10px; }
   .scan-rev-card.fail { border-color: rgba(255,107,53,0.5); }
   .scan-rev-top { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .scan-rev-thumb.noimg, .scan-thumb .noimg { display: flex; align-items: center; justify-content: center; color: var(--faint); font-size: 18px; background: var(--surface2); }
   .scan-rev-thumb { width: 38px; height: 50px; border-radius: 8px; object-fit: cover; border: 1px solid var(--border); flex-shrink: 0; }
   .scan-rev-title { font-size: 13px; color: var(--muted); flex: 1; }
   .scan-diag-row { display: flex; gap: 14px; margin: -4px 0 12px; }
@@ -1461,7 +1462,7 @@ function applyState() {
   recalc();
 }
 
-function init() { load(); applyState(); startWakeLock(); }
+function init() { load(); applyState(); startWakeLock(); scanOfferResume(); }
 
 
 // ── Ticket Scanner (Tesseract) ───────────────────────────────
@@ -1469,6 +1470,68 @@ let scanTickets = [];      // { id, thumbUrl, blob, status, order, deliv, raw }
 let scanNextId = 1;
 let scanWorker = null;
 const SCAN_MAX_WIDTH = 1500;
+const SCAN_STORE_KEY = 'drivercalc2_scanqueue';
+
+// Persist the reviewed scan queue (data only — not the photos). This survives
+// an app close so a batch you scanned but hadn't added yet is offered back.
+// Only tickets that have been READ are worth persisting (they carry values);
+// un-read captures are just images, which we can't restore.
+function scanPersist() {
+  try {
+    const readable = scanTickets.filter(t => t.status === 'done' || t.status === 'fail');
+    if (readable.length === 0) { localStorage.removeItem(SCAN_STORE_KEY); return; }
+    const data = {
+      ts: new Date().toISOString(),
+      tickets: readable.map(t => ({
+        order: t.order, deliv: t.deliv, raw: t.raw || '',
+        tag: t.tag || '', pay: t.pay || 'cash', status: t.status
+      }))
+    };
+    localStorage.setItem(SCAN_STORE_KEY, JSON.stringify(data));
+  } catch (e) {}
+}
+function scanClearPersist() {
+  try { localStorage.removeItem(SCAN_STORE_KEY); } catch (e) {}
+}
+function scanHasPersisted() {
+  try {
+    const raw = localStorage.getItem(SCAN_STORE_KEY);
+    if (!raw) return 0;
+    const d = JSON.parse(raw);
+    return (d && Array.isArray(d.tickets)) ? d.tickets.length : 0;
+  } catch (e) { return 0; }
+}
+// Restore the saved queue into scanTickets (no photos; thumbUrl is null)
+function scanRestorePersisted() {
+  try {
+    const d = JSON.parse(localStorage.getItem(SCAN_STORE_KEY));
+    if (!d || !Array.isArray(d.tickets)) return false;
+    scanTickets = d.tickets.map(t => ({
+      id: scanNextId++, blob: null, thumbUrl: null,
+      status: t.status || 'done', order: t.order ?? null, deliv: t.deliv ?? null,
+      raw: t.raw || '', tag: t.tag || '', pay: t.pay || 'cash'
+    }));
+    return scanTickets.length > 0;
+  } catch (e) { return false; }
+}
+
+// On app start, if a scan batch was left un-added, offer to resume it.
+async function scanOfferResume() {
+  const n = scanHasPersisted();
+  if (!n) return;
+  const ok = await confirmDialog(
+    'You have ' + n + ' scanned ticket' + (n !== 1 ? 's' : '') + ' from before that weren\u2019t added yet.\nResume that scan?',
+    { okText: 'Resume' });
+  if (ok) {
+    if (scanRestorePersisted()) {
+      openScan();
+      scanRenderQueue();
+      scanShowReview(true);
+    }
+  } else {
+    scanClearPersist();
+  }
+}
 
 function openScan() {
   document.getElementById('scanPanel').classList.add('open');
@@ -1590,7 +1653,7 @@ function liveRenderStrip() {
   scanTickets.slice(-12).forEach(t => {
     const img = document.createElement('img');
     img.className = 'livecam-thumb';
-    img.src = t.thumbUrl;
+    if (t.thumbUrl) img.src = t.thumbUrl;
     strip.appendChild(img);
   });
   strip.scrollLeft = strip.scrollWidth;
@@ -1627,7 +1690,7 @@ function scanRenderQueue() {
     if (t.status === 'reading') inner = '<div class="scan-thumb-spin"></div>';
     else if (t.status === 'done') inner = '<div class="scan-thumb-tick">✓</div>';
     else if (t.status === 'fail') inner = '<div class="scan-thumb-fail">!</div>';
-    div.innerHTML = '<img src="' + t.thumbUrl + '"><span class="scan-thumb-num">' + (i+1) + '</span>' +
+    div.innerHTML = (t.thumbUrl ? '<img src="' + t.thumbUrl + '">' : '<div class="noimg">↺</div>') + '<span class="scan-thumb-num">' + (i+1) + '</span>' +
       (t.status === 'pending' ? '<button class="scan-thumb-del" onclick="scanRemove(' + t.id + ')">✕</button>' : '') +
       '<div class="scan-thumb-status">' + inner + '</div>';
     grid.appendChild(div);
@@ -1636,7 +1699,7 @@ function scanRenderQueue() {
 
 function scanRemove(id) {
   const t = scanTickets.find(x => x.id === id);
-  if (t) URL.revokeObjectURL(t.thumbUrl);
+  if (t && t.thumbUrl) URL.revokeObjectURL(t.thumbUrl);
   scanTickets = scanTickets.filter(x => x.id !== id);
   scanRenderQueue();
 }
@@ -1683,6 +1746,7 @@ async function scanReadAll() {
   setTimeout(() => document.getElementById('scanProgress').classList.remove('show'), 400);
   document.getElementById('scanCamBtn').disabled = false;
   scanShowReview(true);   // first reveal after reading — jump to the results
+  scanPersist();          // save the reviewed batch so it survives an app close
 }
 
 function scanUpdateProgress(done, total) {
@@ -1832,7 +1896,7 @@ function scanShowReview(scrollToIt) {
     const card = document.createElement('div');
     card.className = 'scan-rev-card' + (t.status === 'fail' ? ' fail' : '') + (isCard ? ' card' : '');
     card.innerHTML =
-      '<div class="scan-rev-top"><img class="scan-rev-thumb" src="' + t.thumbUrl + '">' +
+      '<div class="scan-rev-top">' + (t.thumbUrl ? '<img class="scan-rev-thumb" src="' + t.thumbUrl + '">' : '<div class="scan-rev-thumb noimg">↺</div>') +
         '<span class="scan-rev-title">Ticket ' + (i+1) + '</span>' +
         '<button class="scan-rev-raw-btn" onclick="scanToggleRaw(' + t.id + ')">raw</button>' +
         '<button class="scan-rev-raw-btn" onclick="scanCopyRaw(' + t.id + ')" title="Copy raw text">' +
@@ -1921,6 +1985,7 @@ function scanSetPay(id, mode) {
   const t = scanTickets.find(x => x.id === id);
   if (!t) return;
   t.pay = mode;
+  scanPersist();
   scanShowReview();
 }
 
@@ -1938,18 +2003,21 @@ function scanSyncReviewEdits() {
     const t = scanTickets.find(x => x.id == inp.getAttribute('data-scan-tag'));
     if (t) t.tag = inp.value.trim();
   });
+  scanPersist();
 }
 
 // Remove a single ticket after reading — drops it from review and queue
 function scanRemoveReviewed(id) {
   scanSyncReviewEdits();                       // keep edits in the other cards
   const t = scanTickets.find(x => x.id === id);
-  if (t) URL.revokeObjectURL(t.thumbUrl);
+  if (t && t.thumbUrl) URL.revokeObjectURL(t.thumbUrl);
   scanTickets = scanTickets.filter(x => x.id !== id);
   scanRenderQueue();                           // keep the thumbnail grid in sync
   if (scanTickets.length === 0) {
     document.getElementById('scanReview').classList.remove('show');
+    scanClearPersist();
   } else {
+    scanPersist();
     scanShowReview();                          // re-render remaining cards with preserved values
   }
 }
@@ -1987,8 +2055,9 @@ function scanAddAll() {
   renderEntries('delivery');
   recalc();
   // clear the queue for next batch
-  scanTickets.forEach(t => URL.revokeObjectURL(t.thumbUrl));
+  scanTickets.forEach(t => { if (t.thumbUrl) URL.revokeObjectURL(t.thumbUrl); });
   scanTickets = [];
+  scanClearPersist();
   scanRenderQueue();
   document.getElementById('scanReview').classList.remove('show');
   closeScan();
