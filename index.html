@@ -101,7 +101,9 @@
 
   /* ── Add entries ── */
   .entries-list { margin-top: 8px; }
-  .entry-row { display: flex; align-items: center; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #1e1e1e; animation: fadeIn 0.15s ease; }
+  .entry-row { display: flex; align-items: center; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #1e1e1e; animation: fadeIn 0.15s ease; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  .entry-row.editing { flex-wrap: wrap; gap: 6px; padding: 7px 0; }
+  .entry-row.editing .entry-edit-val { flex: 1; min-width: 70px; }
   @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
   .entry-index { color: var(--faint); font-size: 11px; width: 18px; font-family: 'JetBrains Mono', monospace; }
   .entry-amount { color: var(--text); font-size: 14px; flex: 1; padding-left: 6px; font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
@@ -878,6 +880,7 @@ function renderEntries(key) {
     const tag = entryTag(e);
     const tagHtml = tag ? `<span class="entry-tag">${tag}</span>` : '';
     row.innerHTML = `<span class="entry-index">${i+1}.</span><span class="entry-amount">${fmt(entryVal(e))}${tagHtml}</span><button class="entry-remove" onclick="removeEntry('${key}',${i})">×</button>`;
+    attachEntryLongPress(row, key, i);
     list.appendChild(row);
   });
   const hasExtras = f.entries.length > 0;
@@ -885,6 +888,74 @@ function renderEntries(key) {
   if (hasExtras) document.getElementById(key + '-combined').textContent = fmt(fieldTotal(key));
 }
 function removeEntry(key, idx) { state[key].entries.splice(idx, 1); renderEntries(key); recalc(); }
+
+// Press-and-hold an entry row (~500ms) to edit it. Keeps the layout untouched —
+// no visible buttons — and a deliberate long-press avoids accidental edits.
+function attachEntryLongPress(row, key, idx) {
+  let timer = null, longFired = false;
+  const start = (e) => {
+    // ignore presses on the × remove button
+    if (e.target.closest('.entry-remove')) return;
+    longFired = false;
+    timer = setTimeout(() => { longFired = true; openEntryEdit(key, idx); }, 500);
+  };
+  const cancel = () => { if (timer) { clearTimeout(timer); timer = null; } };
+  row.addEventListener('touchstart', start, { passive: true });
+  row.addEventListener('touchend', cancel);
+  row.addEventListener('touchmove', cancel);
+  row.addEventListener('mousedown', start);
+  row.addEventListener('mouseup', cancel);
+  row.addEventListener('mouseleave', cancel);
+  // stop the long-press from also firing the context menu / text selection
+  row.addEventListener('contextmenu', (e) => { if (longFired) e.preventDefault(); });
+}
+
+let entryEditing = null;   // { key, idx } while an entry editor is open
+
+function openEntryEdit(key, idx) {
+  const e = state[key].entries[idx];
+  if (e == null) return;
+  entryEditing = { key, idx };
+  const list = document.getElementById(key + '-entries');
+  const rows = list.querySelectorAll('.entry-row');
+  const row = rows[idx];
+  if (!row) return;
+  const val = entryVal(e).toFixed(2);
+  const tag = entryTag(e);
+  row.className = 'entry-row editing';
+  row.innerHTML =
+    '<span class="add-prefix">£</span>' +
+    '<input class="add-input entry-edit-val" type="number" inputmode="decimal" value="' + val + '">' +
+    '<button class="btn-confirm" onclick="saveEntryEdit()">✓</button>' +
+    '<button class="btn-cancel" onclick="cancelEntryEdit()">✕</button>' +
+    '<input class="add-tag-input entry-edit-tag" type="text" value="' + tag.replace(/"/g, '&quot;') + '" placeholder="Label (optional)">';
+  const vi = row.querySelector('.entry-edit-val');
+  vi.focus(); vi.select();
+  vi.addEventListener('keydown', ev => { if (ev.key === 'Enter') saveEntryEdit(); });
+  row.querySelector('.entry-edit-tag').addEventListener('keydown', ev => { if (ev.key === 'Enter') saveEntryEdit(); });
+}
+
+function saveEntryEdit() {
+  if (!entryEditing) return;
+  const { key, idx } = entryEditing;
+  const list = document.getElementById(key + '-entries');
+  const row = list.querySelectorAll('.entry-row')[idx];
+  if (!row) { entryEditing = null; return; }
+  const v = parseFloat(row.querySelector('.entry-edit-val').value);
+  const tag = row.querySelector('.entry-edit-tag').value.trim();
+  if (!v || v <= 0) { row.querySelector('.entry-edit-val').focus(); return; }
+  state[key].entries[idx] = tag ? { v, tag } : v;
+  entryEditing = null;
+  renderEntries(key);
+  recalc();
+}
+
+function cancelEntryEdit() {
+  if (!entryEditing) return;
+  const { key } = entryEditing;
+  entryEditing = null;
+  renderEntries(key);
+}
 
 // ── Inline add ───────────────────────────────────────────────
 function showInlineAdd(key) {
