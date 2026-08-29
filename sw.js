@@ -1,4 +1,4 @@
-const CACHE = 'float-v7';
+const CACHE = 'float-v8';
 
 // Install — minimal, just activate immediately
 self.addEventListener('install', e => {

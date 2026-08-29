@@ -1811,13 +1811,30 @@ function scanExtractValue(text, labels) {
 // address and walk upward, tolerating OCR junk at every step.
 function scanAddrIsJunk(ln) {
   // lines that must never become the address tag
-  return /order\s*time|\btime\b|\d{1,2}:\d{2}(:\d{2})?|jul|jan|feb|mar|apr|may|jun|aug|sep|oct|nov|dec|\b20\d{2}\b|\bsat\b|\bsun\b|\bmon\b|\btue\b|\bwed\b|\bthu\b|\bfri\b|menu\s*name|\bqty\b|\bprice\b|bankhead/i.test(ln);
+  // Month names MUST be word-bounded: unbounded "may"/"mar"/"jun" matched real
+  // streets (Mayfield Gardens, Marchburn Road, Junction Road) and, because junk
+  // BREAKS the upward walk, silently killed the whole address.
+  return /order\s*time|\btime\b|\d{1,2}:\d{2}(:\d{2})?|\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\b|\b20\d{2}\b|\bsat\b|\bsun\b|\bmon\b|\btue\b|\bwed\b|\bthu\b|\bfri\b|menu\s*name|\bqty\b|\bprice\b|bankhead/i.test(ln);
 }
-function scanAddrIsPostcode(ln) {
+function scanAddrPostcodeShape(s) {
   // tolerate OCR junk: strip everything non-alphanumeric, then test UK shape
-  const c = ln.replace(/[^A-Za-z0-9]/g, '');
+  const c = s.replace(/[^A-Za-z0-9]/g, '');
   if (c.length < 5 || c.length > 8) return false;
   return /^[A-Z]{1,2}\d{1,2}[A-Z]?\d?[A-Z]{0,2}$/i.test(c);
+}
+function scanAddrIsPostcode(ln) {
+  if (scanAddrPostcodeShape(ln)) return true;
+  // OCR frequently drops a stray glyph in front of the postcode ("7 AB217NH")
+  // or splits it across tokens ("AB21 7NH"). Whole-line stripping can't rescue
+  // the first case — the artifact digit corrupts the shape — so test the
+  // individual tokens and adjacent pairs too. Without this the line falls
+  // through to the street test, where "7 AB" looks like a house number.
+  const toks = scanAddrStrip(ln).split(/\s+/).filter(Boolean);
+  for (let i = 0; i < toks.length; i++) {
+    if (scanAddrPostcodeShape(toks[i])) return true;
+    if (i + 1 < toks.length && scanAddrPostcodeShape(toks[i] + toks[i + 1])) return true;
+  }
+  return false;
 }
 function scanAddrIsPhone(ln) {
   // A long consecutive digit run is a phone even when OCR merges the customer
@@ -1836,7 +1853,12 @@ function scanAddrStrip(ln) { return ln.replace(/^[^A-Za-z0-9]+/, '').trim(); }
 function scanAddrIsStreet(ln) {
   // The strongest signal: a real address line starts with a house number
   // followed by a word — "15 Parkhill Circle", "118 McIntosh Crescent".
-  return /^\d{1,4}[A-Za-z]?[\s,]+[A-Za-z]/.test(scanAddrStrip(ln));
+  const s = scanAddrStrip(ln);
+  const m = s.match(/^\d{1,4}[A-Za-z]?[\s,]+(\S+)/);
+  if (!m || !/^[A-Za-z]/.test(m[1])) return false;
+  // "7 AB217NH" satisfies the number-then-word shape but is a mangled postcode.
+  if (scanAddrPostcodeShape(m[1])) return false;
+  return true;
 }
 // Address identifier — anchor on the "Miles" line (or the QTY header if that's
 // missing) and walk UPWARD. Rather than relying on the fragile phone line to
@@ -1862,7 +1884,9 @@ function scanExtractAddress(text) {
     if (!ln) continue;
     if (scanAddrIsPostcode(ln)) continue;   // skip the postcode (even mangled)
     if (scanAddrIsPhone(ln)) break;         // reached the phone — stop
-    if (scanAddrIsJunk(ln)) break;          // reached date/time/header — stop
+    // A junk keyword normally means we've walked past the address — but not if
+    // the line is plainly a street ("24 Bankhead Road"). Shape wins over keyword.
+    if (scanAddrIsJunk(ln) && !scanAddrIsStreet(ln)) break;
     collected.unshift(ln);
     if (scanAddrIsStreet(ln)) break;        // found the street — everything above is name/phone
   }
