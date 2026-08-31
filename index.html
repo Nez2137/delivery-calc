@@ -1746,6 +1746,7 @@ async function scanReadAll() {
       t.raw = data.text || '';
       t.order = scanExtractTotal(t.raw);
       t.deliv = scanExtractValue(t.raw, ['delivery','deliverv','deljvery','de1ivery','del charge','del ']);
+      scanReconcile(t, t.raw);
       t.tag = scanExtractAddress(t.raw);
       t.status = (t.order != null || t.deliv != null) ? 'done' : 'fail';
     } catch (e) { t.raw = 'ERROR: ' + e.message; t.status = 'fail'; }
@@ -1788,6 +1789,41 @@ function scanAllMoney(text) {
     if (ms) for (const x of ms) { const v = parseFloat(x.replace(/[.,](?=\d{3}\b)/g,'').replace(',','.')); if (!isNaN(v)) out.push(v); }
   }
   return out;
+}
+// The Sub Total is deliberately excluded from total detection, but it is still
+// worth reading: together with the total it pins the delivery charge by
+// arithmetic. That is far more reliable than parsing the delivery line, which
+// OCR mangles routinely ("Delivery Charge: £3) 5p" yields no parsable money at
+// all, and glyph-repairing it back into digits would be guesswork).
+function scanExtractSub(text) {
+  for (const line of text.split('\n')) {
+    const lower = line.toLowerCase();
+    if (lower.includes('sub') && scanIsTotalLine(lower.replace(/sub/g, ''))) {
+      const v = scanParseMoney(line);
+      if (v != null) return v;
+    }
+  }
+  return null;
+}
+// Fill or correct whichever of total/delivery the OCR lost, using the other two
+// figures. Guarded: a delivery charge outside a sane range means one of the
+// readings is wrong, so we leave the OCR values alone rather than invent money.
+function scanReconcile(t, text) {
+  const sub = scanExtractSub(text);
+  if (sub == null || sub <= 0) return;
+  if (t.order != null) {
+    // When the TOTAL line is destroyed, scanExtractTotal falls back to the
+    // largest money on the ticket — which is then the sub total. Spotting that
+    // equality lets us rebuild the real total instead of under-reading it.
+    if (t.deliv != null && t.deliv > 0 && t.deliv <= 15 && Math.abs(t.order - sub) < 0.011) {
+      t.order = Math.round((sub + t.deliv) * 100) / 100;
+      return;
+    }
+    const d = Math.round((t.order - sub) * 100) / 100;
+    if (d > 0 && d <= 15 && (t.deliv == null || Math.abs(t.deliv - d) > 0.011)) t.deliv = d;
+  } else if (t.deliv != null) {
+    t.order = Math.round((sub + t.deliv) * 100) / 100;
+  }
 }
 function scanExtractTotal(text) {
   let c = null;
